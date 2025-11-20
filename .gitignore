@@ -1,0 +1,91 @@
+# ---------------------------
+# Python
+# ---------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dll
+*.egg-info/
+*.egg
+.build/
+
+# Virtual Environment
+venv/
+.env/
+ENV/
+env/
+.venv/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Cache / temp
+*.cache/
+.cache/
+*.tmp
+tmp/
+temp/
+.DS_Store
+
+# Model files
+*.pt
+*.pth
+*.pkl
+*.ckpt
+
+# ---------------------------
+# SUMO Specific
+# ---------------------------
+*.dump
+*.xml.gz
+*.sumocfg.save
+*.rou.alt.xml
+*.synchro.xml
+*.stop.xml
+*.traci.xml
+*.output.xml
+*.netstate.xml
+*.fcd.xml
+*.edges.xml
+*.nodes.xml
+
+# SUMO Generated binary files
+*.net.xml
+*.edge.xml
+*.edg.xml
+*.nod.xml
+*.rou.xml
+*.add.xml
+
+# Keep specific simulation files
+!simulation/test.net.xml
+!simulation/*.sumo.cfg
+
+# ---------------------------
+# VS Code
+# ---------------------------
+.vscode/
+*.code-workspace
+
+# ---------------------------
+# OS-specific files
+# ---------------------------
+Thumbs.db
+desktop.ini
+
+# ---------------------------
+# Build & Dist
+# ---------------------------
+build/
+dist/
+*.spec
+
+# ---------------------------
+# Node
+# ---------------------------
+node_modules/
