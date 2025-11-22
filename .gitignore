@@ -55,11 +55,11 @@ temp/
 *.nodes.xml
 
 # SUMO Generated binary files
-*.net.xml
+# *.net.xml
 *.edge.xml
 *.edg.xml
 *.nod.xml
-*.rou.xml
+# *.rou.xml
 *.add.xml
 
 # Keep specific simulation files
