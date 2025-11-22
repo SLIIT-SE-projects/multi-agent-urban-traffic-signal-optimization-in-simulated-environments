@@ -1,0 +1,8 @@
+numpy
+pandas
+torch
+torch-geometric
+libsumo
+flask 
+python-socketio 
+matplotlib
