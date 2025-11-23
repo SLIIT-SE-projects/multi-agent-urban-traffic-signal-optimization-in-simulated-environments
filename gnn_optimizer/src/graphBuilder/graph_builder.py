@@ -90,32 +90,52 @@ class TrafficGraphBuilder:
         
         # --- 1. Node Features (Dynamic) ---
         
-        # A. Intersection Features
-        x_inter = torch.zeros((self.num_intersections, 5), dtype=torch.float) 
+        # A. Intersection Features & Positions
+        x_inter = torch.zeros((self.num_intersections, 5), dtype=torch.float)
+        pos_inter = [[0.0, 0.0] for _ in range(self.num_intersections)]
         
         for tls_id, info in snapshot['intersections'].items():
             if tls_id in self.tls_map:
                 idx = self.tls_map[tls_id]
-                # One-hot encode phase (assuming 4 phases)
+                # Features
                 p_idx = int(info['phase_index']) % 4
                 x_inter[idx, p_idx] = 1.0 
                 x_inter[idx, 4] = float(info['time_to_switch'])
+                # Position
+                sumo_node = self.net.getNode(tls_id)
+                if sumo_node:
+                    x, y = sumo_node.getCoord()
+                    pos_inter[idx] = [x, y]
 
         data['intersection'].x = x_inter
+        data['intersection'].pos = torch.tensor(pos_inter, dtype=torch.float)
 
-        # B. Lane Features
+        # B. Lane Features & Positions
         x_lane = torch.zeros((self.num_lanes, 2), dtype=torch.float)
-        
+        pos_lane = [[0.0, 0.0] for _ in range(self.num_lanes)]
+
         for lane_id, info in snapshot['lanes'].items():
             if lane_id in self.lane_map:
                 idx = self.lane_map[lane_id]
+                # Features
                 x_lane[idx, 0] = float(info['queue_length'])
                 x_lane[idx, 1] = float(info['avg_speed'])
-        
+                
+                # Position (Calculate Center of Lane)
+                try:
+                    lane_shape = self.net.getLane(lane_id).getShape()
+                    if lane_shape:
+                        # Calculate simple centroid (average of all shape points)
+                        avg_x = sum(p[0] for p in lane_shape) / len(lane_shape)
+                        avg_y = sum(p[1] for p in lane_shape) / len(lane_shape)
+                        pos_lane[idx] = [avg_x, avg_y]
+                except:
+                    pass # Keep default 0.0 if shape retrieval fails
+
         data['lane'].x = x_lane
+        data['lane'].pos = torch.tensor(pos_lane, dtype=torch.float)
 
         # --- 2. Edges (Static) ---
-        # We must check if edges exist before assigning to avoid empty tensor errors
         if self.static_edges['part_of'].numel() > 0:
             data['lane', 'part_of', 'intersection'].edge_index = self.static_edges['part_of']
         
