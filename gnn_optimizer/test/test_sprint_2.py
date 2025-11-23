@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
+from src.utils.visualizer import plot_graph_topology
 
 # --- CONFIGURATION ---
 # Update these to your actual file paths
@@ -11,7 +12,7 @@ SUMO_NET_PATH = "simulation/network.net.xml" # Your map file
 
 def main():
     if not os.path.exists(SUMO_NET_PATH):
-        print(f"❌ Error: Network file not found at {SUMO_NET_PATH}")
+        print(f"Error: Network file not found at {SUMO_NET_PATH}")
         return
 
     # 1. Initialize Graph Builder (Parses the Map)
@@ -39,6 +40,10 @@ def main():
             print(f"Intersection Node Features: {graph_data['intersection'].x.shape}")
             print(f"Lane Node Features: {graph_data['lane'].x.shape}")
             print(f"Edge ('lane', 'part_of', 'intersection'): {graph_data['lane', 'part_of', 'intersection'].edge_index.shape}")
+
+        # --- AFTER THE LOOP (Visualize the last frame) ---
+        print("\nGenerating Visualization for Demonstration...")
+        plot_graph_topology(graph_data)
 
     except Exception as e:
         print(f"Error: {e}")
