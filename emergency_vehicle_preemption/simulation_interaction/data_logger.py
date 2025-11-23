@@ -37,6 +37,31 @@ class DataLogger:
             # Don't crash the main simulation if logging fails
             print(f"[EVPS Logger] Error at step {step}: {e}")
 
+    def _collect_eta_data(self, step):
+        """Internal function to collect EV physics data."""
+        try:
+            ev_speed = traci.vehicle.getSpeed(self.ev_id)
+            ev_accel = traci.vehicle.getAcceleration(self.ev_id)
+            ev_lane_id = traci.vehicle.getLaneID(self.ev_id)
+            ev_pos = traci.vehicle.getLanePosition(self.ev_id)
+            
+            try:
+                lane_len = traci.lane.getLength(ev_lane_id)
+                dist_to_end_of_lane = lane_len - ev_pos
+            except:
+                dist_to_end_of_lane = 0
+
+            self.eta_training_data.append({
+                "step": step,
+                "ev_id": self.ev_id,
+                "speed": ev_speed,
+                "acceleration": ev_accel,
+                "distance_to_signal": dist_to_end_of_lane,
+                "lane_id": ev_lane_id
+            })
+        except traci.TraCIException:
+            pass # Vehicle might have just left
+
     def save_data(self):
         """
         MUST BE CALLED AT THE END OF SIMULATION.
