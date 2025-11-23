@@ -62,6 +62,39 @@ class DataLogger:
         except traci.TraCIException:
             pass # Vehicle might have just left
 
+    def _collect_safety_data(self, step):
+        """Internal function to collect Intersection data."""
+        try:
+            next_tls = traci.vehicle.getNextTLS(self.ev_id)
+            if next_tls:
+                tls_id, tls_index, dist_to_tls, state = next_tls[0]
+                
+                # Only log if approaching (e.g., < 100m)
+                if dist_to_tls < 100:
+                    self._snapshot_intersection(step, tls_id)
+        except traci.TraCIException:
+            pass
+
+    def _snapshot_intersection(self, step, tls_id):
+        """Helper to snapshot the intersection state."""
+        controlled_lanes = traci.trafficlight.getControlledLanes(tls_id)
+        queues = []
+        speeds = []
+        
+        for lane in controlled_lanes:
+            queues.append(traci.lane.getLastStepHaltingNumber(lane))
+            speeds.append(traci.lane.getLastStepMeanSpeed(lane))
+
+        current_phase = traci.trafficlight.getPhase(tls_id)
+
+        self.safety_training_data.append({
+            "step": step,
+            "tls_id": tls_id,
+            "max_queue_length": max(queues) if queues else 0,
+            "mean_intersection_speed": np.mean(speeds) if speeds else 0,
+            "current_phase": current_phase
+        })
+
     def save_data(self):
         """
         MUST BE CALLED AT THE END OF SIMULATION.
