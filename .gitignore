@@ -40,6 +40,25 @@ saved_states/
 *.pth
 *.pkl
 *.ckpt
+*.h5
+*.joblib
+*.onnx
+
+# ---------------------------
+# COMPONENT: AI-Driven EVPS (emergency_preemption)
+# ---------------------------
+
+# Raw + processed datasets
+emergency_preemption/data/raw/
+emergency_preemption/data/processed/
+emergency_preemption/**/*.csv
+emergency_preemption/**/*.npy
+
+# evps core simulation configs/networks/routes
+!emergency_preemption/simulation/config/**/*.sumocfg
+!emergency_preemption/simulation/networks/**/*.net.xml
+!emergency_preemption/simulation/routes/**/*.rou.xml
+!emergency_preemption/simulation/routes/**/*.trips.xml
 
 # ---------------------------
 # SUMO Specific
