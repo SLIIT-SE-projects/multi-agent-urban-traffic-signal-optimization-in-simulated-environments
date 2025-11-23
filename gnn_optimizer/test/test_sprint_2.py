@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
-from src.utils.visualizer import plot_graph_topology
+from src.utils.visualizer import plot_graph_topology_ver_2
 
 # --- CONFIGURATION ---
 # Update these to your actual file paths
@@ -43,7 +43,7 @@ def main():
 
         # --- AFTER THE LOOP (Visualize the last frame) ---
         print("\nGenerating Visualization for Demonstration...")
-        plot_graph_topology(graph_data)
+        plot_graph_topology_ver_2(graph_data)
 
     except Exception as e:
         print(f"Error: {e}")
