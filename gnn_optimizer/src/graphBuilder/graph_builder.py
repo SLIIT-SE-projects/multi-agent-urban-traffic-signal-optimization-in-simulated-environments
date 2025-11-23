@@ -35,7 +35,7 @@ class TrafficGraphBuilder:
         self.static_edges = self._build_static_topology()
 
     def _build_static_topology(self):
-
+        
         src_part_of, dst_part_of = [], []
         src_adj, dst_adj = [], []
         src_feed, dst_feed = [], []
@@ -83,3 +83,46 @@ class TrafficGraphBuilder:
             'adjacent': torch.tensor([src_adj, dst_adj], dtype=torch.long),
             'feeds': torch.tensor([src_feed, dst_feed], dtype=torch.long)
         }
+
+    def create_hetero_data(self, snapshot):
+        
+        data = HeteroData()
+        
+        # --- 1. Node Features (Dynamic) ---
+        
+        # A. Intersection Features
+        x_inter = torch.zeros((self.num_intersections, 5), dtype=torch.float) 
+        
+        for tls_id, info in snapshot['intersections'].items():
+            if tls_id in self.tls_map:
+                idx = self.tls_map[tls_id]
+                # One-hot encode phase (assuming 4 phases)
+                p_idx = int(info['phase_index']) % 4
+                x_inter[idx, p_idx] = 1.0 
+                x_inter[idx, 4] = float(info['time_to_switch'])
+
+        data['intersection'].x = x_inter
+
+        # B. Lane Features
+        x_lane = torch.zeros((self.num_lanes, 2), dtype=torch.float)
+        
+        for lane_id, info in snapshot['lanes'].items():
+            if lane_id in self.lane_map:
+                idx = self.lane_map[lane_id]
+                x_lane[idx, 0] = float(info['queue_length'])
+                x_lane[idx, 1] = float(info['avg_speed'])
+        
+        data['lane'].x = x_lane
+
+        # --- 2. Edges (Static) ---
+        # We must check if edges exist before assigning to avoid empty tensor errors
+        if self.static_edges['part_of'].numel() > 0:
+            data['lane', 'part_of', 'intersection'].edge_index = self.static_edges['part_of']
+        
+        if self.static_edges['adjacent'].numel() > 0:
+            data['intersection', 'adjacent_to', 'intersection'].edge_index = self.static_edges['adjacent']
+            
+        if self.static_edges['feeds'].numel() > 0:
+            data['lane', 'feeds_into', 'lane'].edge_index = self.static_edges['feeds']
+
+        return data
