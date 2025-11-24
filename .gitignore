@@ -54,6 +54,11 @@ emergency_preemption/data/processed/
 emergency_preemption/**/*.csv
 emergency_preemption/**/*.npy
 
+# Scalers / transforms
+emergency_preemption/data/scalers/
+emergency_preemption/**/*.pkl
+
+
 # evps core simulation configs/networks/routes
 !emergency_preemption/simulation/config/**/*.sumocfg
 !emergency_preemption/simulation/networks/**/*.net.xml
