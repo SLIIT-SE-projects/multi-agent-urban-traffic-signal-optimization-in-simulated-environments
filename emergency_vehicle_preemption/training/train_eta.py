@@ -1,12 +1,13 @@
 import os
 import numpy as np
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
 
 # --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "../data/processed/")
 MODEL_SAVE_DIR = os.path.join(BASE_DIR, "../models/saved/")
 
-# Hyperparameters
 EPOCHS = 50
 BATCH_SIZE = 4
 VALIDATION_SPLIT = 0.2
@@ -22,16 +23,30 @@ def load_data():
     y_test = np.load(os.path.join(PROCESSED_DATA_DIR, "y_test.npy"))
     return X_train, y_train, X_test, y_test
 
+def build_model(input_shape):
+    """
+    Defines the LSTM architecture with Dropout (regression output).
+    """
+    model = Sequential()
+    model.add(LSTM(units=64, input_shape=input_shape, return_sequences=False))
+    model.add(Dropout(0.2))
+    model.add(Dense(units=1, activation="linear"))
+    model.compile(optimizer="adam", loss="mean_squared_error", metrics=["mae"])
+    return model
+
 def main():
     X_train, y_train, X_test, y_test = load_data()
-    print(f"Training Data Shape: {X_train.shape}, y_train: {y_train.shape}")
-    print(f"Test Data Shape: X_test: {X_test.shape}, y_test: {y_test.shape}")
+    print(f"Training Data Shape: {X_train.shape}")
 
     if X_train.shape[0] == 0:
         print("Error: No training data found.")
         return
 
-    print("Data loaded successfully. Model definition will be added next.")
+    input_shape = (X_train.shape[1], X_train.shape[2])
+    model = build_model(input_shape)
+    model.summary()
+
+    print("Model defined successfully. Training loop will be added next.")
 
 if __name__ == "__main__":
     main()
