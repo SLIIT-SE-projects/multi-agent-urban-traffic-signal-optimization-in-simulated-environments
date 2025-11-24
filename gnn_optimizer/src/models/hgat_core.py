@@ -22,8 +22,17 @@ class RecurrentHGAT(nn.Module):
             ('intersection', 'adjacent_to', 'intersection'): GATConv((-1, -1), hidden_channels, heads=num_heads, add_self_loops=False),
             ('lane', 'feeds_into', 'lane'): GATConv((-1, -1), hidden_channels, heads=num_heads, add_self_loops=False)
         }, aggr='sum')
+
+        # 3. Temporal Recurrent Layer.
+        # GRU Cell to remember history.
+        gnn_out_dim = hidden_channels * num_heads
+        self.gru = nn.GRUCell(gnn_out_dim, hidden_channels)
+
+        # 4. Decision Head.
+        self.actor_head = nn.Linear(hidden_channels, out_channels)
         
-        # Layers will be defined in future commits
+        # 5. Uncertainty Mechanism
+        self.dropout = nn.Dropout(p=0.3) # 30% dropout rate
         
     def forward(self, x_dict, edge_index_dict, hidden_state=None):
         # Forward logic will be implemented later
