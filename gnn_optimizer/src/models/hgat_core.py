@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import HeteroConv, GATConv, Linear
 
+# --- IMPORT THE NEW MODULES ---
+from src.models.policy_head import TrafficPolicyHead
+from src.models.uncertainty import BayesianDropout
+
 class RecurrentHGAT(nn.Module):
     def __init__(self, hidden_channels, out_channels, num_heads, metadata):
         super().__init__()
@@ -28,12 +32,12 @@ class RecurrentHGAT(nn.Module):
         gnn_out_dim = hidden_channels * num_heads
         self.gru = nn.GRUCell(gnn_out_dim, hidden_channels)
 
-        # 4. Decision Head.
-        self.actor_head = nn.Linear(hidden_channels, out_channels)
-        
-        # 5. Uncertainty Mechanism
-        self.dropout = nn.Dropout(p=0.3) # 30% dropout rate
-        
+        # 4. Uncertainty Module (The New Class)
+        self.mc_dropout = BayesianDropout(p=0.3)
+
+        # 5. Decision Head (The New Class)
+        self.policy_head = TrafficPolicyHead(hidden_channels, out_channels)
+
     def forward(self, x_dict, edge_index_dict, hidden_state=None):
         # 1. Encode Raw Features
         x_dict_encoded = {}
@@ -43,8 +47,8 @@ class RecurrentHGAT(nn.Module):
         # 2. Spatial Processing (GNN)
         x_dict_out = self.conv1(x_dict_encoded, edge_index_dict)
         
-        # Apply Activation & Dropout (Crucial for Uncertainty!)
-        x_dict_out = {k: self.dropout(F.relu(v)) for k, v in x_dict_out.items()}
+        # Apply Activation & The Custom Dropout
+        x_dict_out = {k: self.mc_dropout(F.relu(v)) for k, v in x_dict_out.items()}
         
         # 3. Temporal Processing (GRU)
         intersection_embeddings = x_dict_out['intersection']
@@ -56,6 +60,6 @@ class RecurrentHGAT(nn.Module):
         new_hidden_state = self.gru(intersection_embeddings, hidden_state)
         
         # 4. Decision Making
-        action_logits = self.actor_head(new_hidden_state)
+        action_logits = self.policy_head(new_hidden_state)
         
         return action_logits, new_hidden_state
