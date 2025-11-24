@@ -2,6 +2,7 @@ import os
 import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.callbacks import EarlyStopping
 
 # --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,9 +25,7 @@ def load_data():
     return X_train, y_train, X_test, y_test
 
 def build_model(input_shape):
-    """
-    Defines the LSTM architecture with Dropout (regression output).
-    """
+    """Defines the LSTM architecture with Dropout."""
     model = Sequential()
     model.add(LSTM(units=64, input_shape=input_shape, return_sequences=False))
     model.add(Dropout(0.2))
@@ -46,7 +45,24 @@ def main():
     model = build_model(input_shape)
     model.summary()
 
-    print("Model defined successfully. Training loop will be added next.")
+    print("Starting training...")
+
+    early_stop = EarlyStopping(
+        monitor="val_loss",
+        patience=10,
+        restore_best_weights=True
+    )
+
+    history = model.fit(
+        X_train, y_train,
+        epochs=EPOCHS,
+        batch_size=BATCH_SIZE,
+        validation_split=VALIDATION_SPLIT,
+        callbacks=[early_stop],
+        verbose=1
+    )
+
+    print("Training complete. Evaluation + saving will be added next.")
 
 if __name__ == "__main__":
     main()
