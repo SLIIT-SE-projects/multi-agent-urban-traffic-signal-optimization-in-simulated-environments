@@ -35,5 +35,27 @@ class RecurrentHGAT(nn.Module):
         self.dropout = nn.Dropout(p=0.3) # 30% dropout rate
         
     def forward(self, x_dict, edge_index_dict, hidden_state=None):
-        # Forward logic will be implemented later
-        pass
+        # 1. Encode Raw Features
+        x_dict_encoded = {}
+        for node_type, x in x_dict.items():
+            x_dict_encoded[node_type] = F.relu(self.encoder_dict[node_type](x))
+
+        # 2. Spatial Processing (GNN)
+        x_dict_out = self.conv1(x_dict_encoded, edge_index_dict)
+        
+        # Apply Activation & Dropout (Crucial for Uncertainty!)
+        x_dict_out = {k: self.dropout(F.relu(v)) for k, v in x_dict_out.items()}
+        
+        # 3. Temporal Processing (GRU)
+        intersection_embeddings = x_dict_out['intersection']
+        
+        if hidden_state is None:
+            hidden_state = torch.zeros_like(intersection_embeddings[:, :self.hidden_channels])
+
+        # Update memory
+        new_hidden_state = self.gru(intersection_embeddings, hidden_state)
+        
+        # 4. Decision Making
+        action_logits = self.actor_head(new_hidden_state)
+        
+        return action_logits, new_hidden_state
