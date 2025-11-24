@@ -14,6 +14,14 @@ class RecurrentHGAT(nn.Module):
         self.encoder_dict = nn.ModuleDict()
         self.encoder_dict['intersection'] = Linear(-1, hidden_channels)
         self.encoder_dict['lane'] = Linear(-1, hidden_channels)
+
+        # 2. Spatial GNN Layers
+        # Layer 1: Aggregates info from neighbors using Attention
+        self.conv1 = HeteroConv({
+            ('lane', 'part_of', 'intersection'): GATConv((-1, -1), hidden_channels, heads=num_heads, add_self_loops=False),
+            ('intersection', 'adjacent_to', 'intersection'): GATConv((-1, -1), hidden_channels, heads=num_heads, add_self_loops=False),
+            ('lane', 'feeds_into', 'lane'): GATConv((-1, -1), hidden_channels, heads=num_heads, add_self_loops=False)
+        }, aggr='sum')
         
         # Layers will be defined in future commits
         
