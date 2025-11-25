@@ -32,6 +32,9 @@ tmp/
 temp/
 .DS_Store
 
+# Saved simulation states
+saved_states/
+
 # Model files
 *.pt
 *.pth
