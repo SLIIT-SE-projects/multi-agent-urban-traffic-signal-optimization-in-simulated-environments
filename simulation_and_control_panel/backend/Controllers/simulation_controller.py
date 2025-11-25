@@ -14,22 +14,25 @@ else:
     sys.exit("Please set SUMO_HOME environment variable")
 
 class SimulationController:
-    def __init__(self, config_file, use_gui=True, auto_start_stepping=True, step_delay=0.1):
+    def __init__(self, config_file, use_gui=True, step_delay=0.1):
         self.config_file = config_file
         self.use_gui = use_gui
-        self.auto_start_stepping = auto_start_stepping  # NEW: Auto-start stepping
-        self.default_step_delay = step_delay  # NEW: Default delay from config
+        self.default_step_delay = step_delay
         self.is_running = False
         self.is_paused = False
         self.current_step = 0
         self.saved_states = {}
-        self.auto_stepping = False  # FIXED: Changed to False initially
+        self.auto_stepping = False
         self.auto_step_thread = None
+        self.step_lock = threading.Lock()  # Lock for thread-safe stepping
 
     def start_auto_stepping(self, step_delay=None):
         """Start automatic stepping in background"""
         if not self.is_running:
             return {"status": "error", "message": "Simulation not running. Call /start first"}
+        
+        if self.is_paused:
+            return {"status": "error", "message": "Simulation is paused. Resume the simulation first"}
         
         if self.auto_stepping:
             return {"status": "error", "message": "Auto-stepping already active"}
@@ -44,8 +47,9 @@ class SimulationController:
             while self.auto_stepping and self.is_running:
                 if not self.is_paused:
                     try:
-                        traci.simulationStep()
-                        self.current_step += 1
+                        with self.step_lock:
+                            traci.simulationStep()
+                            self.current_step += 1
                         time.sleep(step_delay)
                     except Exception as e:
                         print(f"Error in auto-stepping: {e}")
@@ -70,6 +74,25 @@ class SimulationController:
 
         return {"status": "success", "message": "Auto-stepping stopped"}
 
+    def pause_auto_stepping(self):
+        """Pause auto-stepping (freeze simulation while keeping thread alive)"""
+        if not self.auto_stepping:
+            return {"status": "error", "message": "Auto-stepping not active"}
+        
+        self.is_paused = True
+        return {"status": "success", "message": "Auto-stepping paused", "step": self.current_step}
+
+    def resume_auto_stepping(self):
+        """Resume auto-stepping"""
+        if not self.auto_stepping:
+            return {"status": "error", "message": "Auto-stepping not active"}
+        
+        if not self.is_paused:
+            return {"status": "error", "message": "Auto-stepping not paused"}
+        
+        self.is_paused = False
+        return {"status": "success", "message": "Auto-stepping resumed", "step": self.current_step}
+
     def start(self):
         """Start the simulation"""
         if self.is_running:
@@ -87,11 +110,6 @@ class SimulationController:
             print(f"Simulation started with config: {self.config_file}")
             print(f"GUI mode: {self.use_gui}")
             
-            # NEW: Automatically start stepping if configured
-            if self.auto_start_stepping:
-                result = self.start_auto_stepping()
-                print(f"Auto-stepping: {result['message']}")
-            
             return {
                 "status": "success", 
                 "message": "Simulation started", 
@@ -106,12 +124,16 @@ class SimulationController:
         if not self.is_running:
             return {"status": "error", "message": "Simulation not running"}
         
+        if self.auto_stepping:
+            return {"status": "error", "message": "Cannot manually step when auto-stepping is active. Stop auto-stepping first."}
+        
         if self.is_paused:
             return {"status": "error", "message": "Simulation is paused"}
             
         try:
-            traci.simulationStep()
-            self.current_step += 1
+            with self.step_lock:
+                traci.simulationStep()
+                self.current_step += 1
             return self.get_current_data()
         except Exception as e:
             return {"status": "error", "message": str(e)}
@@ -203,19 +225,22 @@ class SimulationController:
         if not self.is_running:
             return {"status": "error", "message": "Simulation not running"}
         
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        state_id = f"{state_name}_{timestamp}"
+        
         state_data = {
             "step": self.current_step,
             "timestamp": datetime.now().isoformat(),
             "data": self.get_current_data()
         }
-        self.saved_states[state_name] = state_data
+        self.saved_states[state_id] = state_data
         
-        # Save to file
+        # Save to file with unique filename
         try:
             os.makedirs("saved_states", exist_ok=True)
-            with open(f"saved_states/{state_name}.json", "w") as f:
+            with open(f"saved_states/{state_id}.json", "w") as f:
                 json.dump(state_data, f, indent=2)
-            return {"status": "success", "message": f"State '{state_name}' saved"}
+            return {"status": "success", "message": f"State '{state_name}' saved", "state_id": state_id}
         except Exception as e:
             return {"status": "error", "message": str(e)}
     

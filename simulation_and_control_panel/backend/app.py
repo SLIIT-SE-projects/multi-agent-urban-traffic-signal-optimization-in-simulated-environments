@@ -15,7 +15,6 @@ CONFIG_FILE = os.path.join("..", "scenarios", "grid3x3", "grid3x3.sumo.cfg")
 controller = SimulationController(
     CONFIG_FILE, 
     use_gui=config.USE_GUI,
-    auto_start_stepping=config.AUTO_START_STEPPING,
     step_delay=config.STEP_DELAY
 )
 
@@ -67,9 +66,19 @@ def health_check():
 
 @app.route('/api/simulation/auto-step/start', methods=['POST'])
 def start_auto_step():
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     step_delay = data.get('step_delay', None)  # None will use config default
     result = controller.start_auto_stepping(step_delay)
+    return jsonify(result)
+
+@app.route('/api/simulation/auto-step/pause', methods=['POST'])
+def pause_auto_step():
+    result = controller.pause_auto_stepping()
+    return jsonify(result)
+
+@app.route('/api/simulation/auto-step/resume', methods=['POST'])
+def resume_auto_step():
+    result = controller.resume_auto_stepping()
     return jsonify(result)
 
 @app.route('/api/simulation/auto-step/stop', methods=['POST'])
@@ -83,7 +92,6 @@ if __name__ == '__main__':
     print("=" * 60)
     print(f"Config file: {CONFIG_FILE}")
     print(f"GUI Mode: {config.USE_GUI}")
-    print(f"Auto-start stepping: {config.AUTO_START_STEPPING}")
     print(f"Step delay: {config.STEP_DELAY}s")
     print(f"API will be available at: http://localhost:{config.PORT}")
     print("=" * 60)

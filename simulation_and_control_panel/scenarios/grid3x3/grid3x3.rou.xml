@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <!-- Vehicle Types -->
+    <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5" maxSpeed="50" color="1,1,0"/>
+    <vType id="bus" accel="1.2" decel="4.0" sigma="0.3" length="12" maxSpeed="40" vClass="bus" color="0,1,1"/>
+    <vType id="truck" accel="1.8" decel="4.0" sigma="0.4" length="8" maxSpeed="40" color="0.5,0.5,0.5"/>
+    <vType id="emergency" accel="3.5" decel="5.5" sigma="0.2" length="6" maxSpeed="60" vClass="emergency" color="1,0,0"/>
+    
+    <!-- HORIZONTAL ROUTES (West to East) -->
+    <route id="route_WE_0" edges="W0_J00 J00_J10 J10_J20 J20_E0"/>
+    <route id="route_WE_1" edges="W1_J01 J01_J11 J11_J21 J21_E1"/>
+    <route id="route_WE_2" edges="W2_J02 J02_J12 J12_J22 J22_E2"/>
+    
+    <!-- HORIZONTAL ROUTES (East to West) -->
+    <route id="route_EW_0" edges="E0_J20 J20_J10 J10_J00 J00_W0"/>
+    <route id="route_EW_1" edges="E1_J21 J21_J11 J11_J01 J01_W1"/>
+    <route id="route_EW_2" edges="E2_J22 J22_J12 J12_J02 J02_W2"/>
+    
+    <!-- VERTICAL ROUTES (South to North) -->
+    <route id="route_SN_0" edges="S0_J00 J00_J01 J01_J02 J02_N0"/>
+    <route id="route_SN_1" edges="S1_J10 J10_J11 J11_J12 J12_N1"/>
+    <route id="route_SN_2" edges="S2_J20 J20_J21 J21_J22 J22_N2"/>
+    
+    <!-- VERTICAL ROUTES (North to South) -->
+    <route id="route_NS_0" edges="N0_J02 J02_J01 J01_J00 J00_S0"/>
+    <route id="route_NS_1" edges="N1_J12 J12_J11 J11_J10 J10_S1"/>
+    <route id="route_NS_2" edges="N2_J22 J22_J21 J21_J20 J20_S2"/>
+    
+    <!-- DIAGONAL AND MIXED ROUTES - FIXED -->
+    <!-- Southwest to Northeast -->
+    <route id="route_diagonal_1" edges="W0_J00 J00_J01 J01_J11 J11_J21 J21_E1"/>
+    <route id="route_diagonal_2" edges="S0_J00 J00_J10 J10_J11 J11_J12 J12_N1"/>
+    <!-- Southeast to Northwest - FIXED -->
+    <route id="route_diagonal_3" edges="E0_J20 J20_J10 J10_J11 J11_J12 J12_J02 J02_N0"/>
+    <route id="route_diagonal_4" edges="S2_J20 J20_J21 J21_J11 J11_J01 J01_W1"/>
+    
+    <!-- TRAFFIC FLOWS - Realistic urban traffic patterns -->
+    
+    <!-- Main horizontal flows (higher traffic on middle row) -->
+    <flow id="flow_WE_0" type="car" route="route_WE_0" begin="0" end="3600" vehsPerHour="300" departLane="best"/>
+    <flow id="flow_WE_1" type="car" route="route_WE_1" begin="0" end="3600" vehsPerHour="450" departLane="best"/>
+    <flow id="flow_WE_2" type="car" route="route_WE_2" begin="0" end="3600" vehsPerHour="300" departLane="best"/>
+    
+    <flow id="flow_EW_0" type="car" route="route_EW_0" begin="0" end="3600" vehsPerHour="320" departLane="best"/>
+    <flow id="flow_EW_1" type="car" route="route_EW_1" begin="0" end="3600" vehsPerHour="480" departLane="best"/>
+    <flow id="flow_EW_2" type="car" route="route_EW_2" begin="0" end="3600" vehsPerHour="320" departLane="best"/>
+    
+    <!-- Vertical flows (medium traffic) -->
+    <flow id="flow_SN_0" type="car" route="route_SN_0" begin="0" end="3600" vehsPerHour="280" departLane="best"/>
+    <flow id="flow_SN_1" type="car" route="route_SN_1" begin="0" end="3600" vehsPerHour="350" departLane="best"/>
+    <flow id="flow_SN_2" type="car" route="route_SN_2" begin="0" end="3600" vehsPerHour="280" departLane="best"/>
+    
+    <flow id="flow_NS_0" type="car" route="route_NS_0" begin="0" end="3600" vehsPerHour="260" departLane="best"/>
+    <flow id="flow_NS_1" type="car" route="route_NS_1" begin="0" end="3600" vehsPerHour="330" departLane="best"/>
+    <flow id="flow_NS_2" type="car" route="route_NS_2" begin="0" end="3600" vehsPerHour="260" departLane="best"/>
+    
+    <!-- Diagonal flows (lighter traffic) -->
+    <flow id="flow_diag_1" type="car" route="route_diagonal_1" begin="0" end="3600" vehsPerHour="120" departLane="best"/>
+    <flow id="flow_diag_2" type="car" route="route_diagonal_2" begin="0" end="3600" vehsPerHour="100" departLane="best"/>
+    <flow id="flow_diag_3" type="car" route="route_diagonal_3" begin="0" end="3600" vehsPerHour="110" departLane="best"/>
+    <flow id="flow_diag_4" type="car" route="route_diagonal_4" begin="0" end="3600" vehsPerHour="90" departLane="best"/>
+    
+    <!-- Bus routes (public transport on main corridors) -->
+    <flow id="flow_bus_WE" type="bus" route="route_WE_1" begin="0" end="3600" vehsPerHour="40" departLane="best"/>
+    <flow id="flow_bus_EW" type="bus" route="route_EW_1" begin="0" end="3600" vehsPerHour="40" departLane="best"/>
+    <flow id="flow_bus_SN" type="bus" route="route_SN_1" begin="0" end="3600" vehsPerHour="30" departLane="best"/>
+    <flow id="flow_bus_NS" type="bus" route="route_NS_1" begin="0" end="3600" vehsPerHour="30" departLane="best"/>
+    
+    <!-- Trucks (delivery vehicles, lower frequency) -->
+    <flow id="flow_truck_WE" type="truck" route="route_WE_0" begin="0" end="3600" vehsPerHour="50" departLane="best"/>
+    <flow id="flow_truck_EW" type="truck" route="route_EW_2" begin="0" end="3600" vehsPerHour="50" departLane="best"/>
+    
+    <!-- Emergency vehicles (rare but important for testing) -->
+    <vehicle id="ambulance_1" type="emergency" route="route_WE_1" depart="300" color="1,0,0"/>
+    <vehicle id="fire_truck_1" type="emergency" route="route_SN_1" depart="900" color="1,0,0"/>
+    <vehicle id="police_1" type="emergency" route="route_EW_1" depart="1500" color="0,0,1"/>
+</routes>
