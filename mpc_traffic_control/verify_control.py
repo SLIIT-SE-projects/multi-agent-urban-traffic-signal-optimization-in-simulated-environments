@@ -12,11 +12,10 @@ logger = logging.getLogger("VERIFY")
 
 from src.traffic_mpc.config.settings import AppConfig, SumoConfig
 from src.traffic_mpc.interface.sumo_client import SumoClient
+from src.traffic_mpc.core.estimation import StateEstimator
 
 def run_verification():
     # 1. Load Configuration (Manually constructing for test)
-    # In the real app, we use Hydra/YAML, but here we test the object directly.
-    
     # Point to the file generated in Phase 2
     sumo_cfg_path = os.path.abspath("conf/network/grid_3x3.sumocfg")
     
@@ -36,28 +35,47 @@ def run_verification():
         client.start()
         logger.info("SUMO Started Successfully.")
 
-        # 3. Run a simple loop
-        logger.info("Running simulation loop for 50 steps...")
+        # --- NEW: Initialize Estimator ---
+        # We need to perform one step to query the API for available detectors.
+        client.step()
         
-        # Get ID of the central intersection (usually 'C' or similar in netgenerate)
-        # Note: In netgenerate grids, IDs are usually node ids like '1/1' or 'C'. 
-        # We will print available ones to be sure.
+        # Get all detector IDs currently loaded in the simulation
+        all_detectors = list(client.get_detector_data().keys())
+        
+        # Extract lane IDs from detector IDs (remove 'e2_' prefix)
+        # This assumes your detectors are named "e2_edgeID_laneIndex" or similar
+        all_lanes = [d.replace("e2_", "") for d in all_detectors]
+        
+        logger.info(f"Initialized Estimator for {len(all_lanes)} lanes.")
+        estimator = StateEstimator(link_ids=all_lanes, alpha=0.9)
+
+        # Get ID of the central intersection for testing actuation later
         import traci
         tls_ids = traci.trafficlight.getIDList()
         logger.info(f"Found Traffic Lights: {tls_ids}")
-        
         target_tls = tls_ids[0] if tls_ids else None
 
+        # 3. Run the loop
+        logger.info("Running simulation loop for 50 steps...")
+        
         for step in range(50):
             client.step()
             
-            # Read Data
-            detectors = client.get_detector_data()
+            # --- NEW: Data Flow Logic ---
+            # 1. Get Raw Data from SUMO
+            raw_data = client.get_detector_data()
+            
+            # 2. Estimate State using the raw data
+            state = estimator.update(raw_data)
+            
+            # Log progress and sample state data
             if step % 10 == 0:
                 logger.info(f"Step {step}: Time={client.get_time()}")
-                # logger.info(f"Detector Data: {detectors}") # Likely empty as we haven't added E2 detectors yet
+                # Print state of first 3 lanes just to see that data is flowing
+                sample = {k: state[k] for k in list(state)[:3]}
+                logger.info(f"Estimated Queues (Sample): {sample}")
 
-            # Test Control Action
+            # --- Existing: Test Control Action ---
             if target_tls and step == 20:
                 logger.info(f"--- ACTUATING TLS {target_tls} ---")
                 logger.info("Extending current phase by 30 seconds.")
