@@ -30,9 +30,9 @@ class SumoManager:
         try:
             traci.start(cmd)
             self.connection = traci.getConnection()
-            print(f"🚀 SUMO Simulation Started: {self.config_path}")
+            print(f" SUMO Simulation Started: {self.config_path}")
         except Exception as e:
-            print(f"❌ Error starting SUMO: {e}")
+            print(f" Error starting SUMO: {e}")
             sys.exit(1)
 
     def get_snapshot(self):
@@ -84,10 +84,37 @@ class SumoManager:
             "intersections": intersection_data,
             "lanes": lane_data
         }
+    
+    def apply_actions(self, actions_dict):
+
+        for tls_id, phase_index in actions_dict.items():
+            try:
+                # 1. Check Cache
+                if tls_id not in self.phase_counts:
+                    # Query SUMO for the logic definition
+                    logics = traci.trafficlight.getAllProgramLogics(tls_id)
+                    if len(logics) > 0:
+                        num_phases = len(logics[0].phases)
+                        self.phase_counts[tls_id] = num_phases
+                    else:
+                        self.phase_counts[tls_id] = 4 
+
+                # 2. Modulo Arithmetic to ensure safety
+                max_phases = self.phase_counts[tls_id]
+                safe_phase = int(phase_index) % max_phases
+                
+                # 3. Send Command
+                current_phase = traci.trafficlight.getPhase(tls_id)
+                if current_phase != safe_phase:
+                    traci.trafficlight.setPhase(tls_id, safe_phase)
+                    
+            except Exception as e:
+                # Log the error and continue
+                pass
 
     def step(self):
         traci.simulationStep()
 
     def close(self):
         traci.close()
-        print("🛑 SUMO Simulation Closed.")
+        print(" SUMO Simulation Closed.")
