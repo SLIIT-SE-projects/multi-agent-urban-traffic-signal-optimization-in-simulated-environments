@@ -83,7 +83,7 @@ class RealTimeInferenceEngine:
 
 # Direct Run for Testing
 if __name__ == "__main__":
-    CONFIG = "simulation/scenarios.sumocfg"
+    CONFIG = "simulation/scenario.sumocfg"
     NET = "simulation/network.net.xml"
     
     # Check if files exist before running to avoid confusing errors
