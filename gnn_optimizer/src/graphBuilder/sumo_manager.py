@@ -9,6 +9,9 @@ class SumoManager:
         self.config_path = config_path
         self.use_gui = use_gui
         self.connection = None
+
+        # Cache to store how many phases each intersection actually has
+        self.phase_counts = {}
         
         # Check if SUMO_HOME is set (crucial for sumolib)
         if 'SUMO_HOME' not in os.environ:
