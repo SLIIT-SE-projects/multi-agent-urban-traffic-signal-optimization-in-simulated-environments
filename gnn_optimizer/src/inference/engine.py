@@ -1,3 +1,11 @@
+import os
+import sys
+
+# SYSTEM PATH FIX
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 import torch
 from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
@@ -30,7 +38,6 @@ class RealTimeInferenceEngine:
         print("✅ System Initialized.")
 
     def run(self, steps=100):
-
         try:
             for t in range(steps):
                 # 1. Sense (Get Data)
@@ -54,8 +61,9 @@ class RealTimeInferenceEngine:
                 
                 actions_dict = {}
                 for idx, phase_val in enumerate(chosen_phases):
-                    tls_id = idx_to_id[idx]
-                    actions_dict[tls_id] = phase_val
+                    if idx in idx_to_id:
+                        tls_id = idx_to_id[idx]
+                        actions_dict[tls_id] = phase_val
                 
                 # 4. Act (Apply Actions)
                 self.manager.apply_actions(actions_dict)
@@ -75,9 +83,15 @@ class RealTimeInferenceEngine:
 
 # Direct Run for Testing
 if __name__ == "__main__":
-    CONFIG = "simulation/simulation.sumo.cfg"
-    NET = "simulation/test.net.xml"
+    CONFIG = "simulation/scenarios.sumocfg"
+    NET = "simulation/network.net.xml"
     
-    engine = RealTimeInferenceEngine(CONFIG, NET, use_gui=True) 
-    engine.initialize_model()
-    engine.run(steps=200)
+    # Check if files exist before running to avoid confusing errors
+    if not os.path.exists(CONFIG):
+        print(f" Error: Config file not found at {CONFIG}")
+    elif not os.path.exists(NET):
+        print(f" Error: Network file not found at {NET}")
+    else:
+        engine = RealTimeInferenceEngine(CONFIG, NET, use_gui=True)
+        engine.initialize_model()
+        engine.run(steps=200)
