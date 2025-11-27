@@ -86,6 +86,33 @@ def train_ssl():
             hidden_state = hidden_state.detach()
             total_train_loss += loss.item()
 
+        avg_train_loss = total_train_loss / len(train_dataset)
+
+        # B. TESTING (VALIDATION) PHASE
+        gnn_model.eval()
+        predictor.eval()
+        total_test_loss = 0
+        hidden_state_test = None
+        
+        with torch.no_grad(): # Disable gradient calculation for testing
+            for t in range(len(test_dataset) - 1):
+                current_data = test_dataset[t]
+                next_data = test_dataset[t+1]
+                
+                _, hidden_state_test = gnn_model(current_data.x_dict, current_data.edge_index_dict, hidden_state_test)
+                predicted = predictor(hidden_state_test)
+                target = next_data['intersection'].x
+                
+                loss = criterion(predicted, target)
+                total_test_loss += loss.item()
+        
+        avg_test_loss = total_test_loss / len(test_dataset)
+
+        print(f" Epoch {epoch+1} | Train Loss: {avg_train_loss:.6f} | Test Loss: {avg_test_loss:.6f}")
+
+    # 4. Save
+    print(" Saving Pre-trained Weights...")
+    torch.save(gnn_model.state_dict(), MODEL_SAVE_PATH)
     print(" Pre-training Complete!")
 
 if __name__ == "__main__":
