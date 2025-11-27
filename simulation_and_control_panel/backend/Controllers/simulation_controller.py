@@ -1,8 +1,6 @@
 import os
 import sys
 import traci
-import json
-from datetime import datetime
 import threading
 import time
 
@@ -13,6 +11,7 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("Please set SUMO_HOME environment variable")
 
+
 class SimulationController:
     def __init__(self, config_file, use_gui=True, step_delay=0.1):
         self.config_file = config_file
@@ -21,7 +20,6 @@ class SimulationController:
         self.is_running = False
         self.is_paused = False
         self.current_step = 0
-        self.saved_states = {}
         self.auto_stepping = False
         self.auto_step_thread = None
         self.step_lock = threading.Lock()  # Lock for thread-safe stepping
@@ -176,79 +174,3 @@ class SimulationController:
         except Exception as e:
             return {"status": "error", "message": str(e)}
     
-    def get_current_data(self):
-        """Get current simulation data"""
-        if not self.is_running:
-            return {"status": "error", "message": "Simulation not running"}
-        
-        try:
-            vehicle_ids = traci.vehicle.getIDList()
-            tls_ids = traci.trafficlight.getIDList()
-            
-            vehicles_data = []
-            for vid in vehicle_ids[:50]:  # Limit to 50 vehicles for performance
-                try:
-                    vehicles_data.append({
-                        "id": vid,
-                        "speed": round(traci.vehicle.getSpeed(vid), 2),
-                        "position": traci.vehicle.getPosition(vid),
-                        "waiting_time": round(traci.vehicle.getWaitingTime(vid), 1)
-                    })
-                except:
-                    continue
-            
-            traffic_lights_data = []
-            for tls_id in tls_ids:
-                try:
-                    traffic_lights_data.append({
-                        "id": tls_id,
-                        "state": traci.trafficlight.getRedYellowGreenState(tls_id),
-                        "phase": traci.trafficlight.getPhase(tls_id)
-                    })
-                except:
-                    continue
-            
-            return {
-                "status": "success",
-                "step": self.current_step,
-                "vehicle_count": len(vehicle_ids),
-                "vehicles": vehicles_data,
-                "traffic_lights": traffic_lights_data,
-                "is_paused": self.is_paused,
-                "auto_stepping": self.auto_stepping
-            }
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-    
-    def save_state(self, state_name):
-        """Save current simulation state"""
-        if not self.is_running:
-            return {"status": "error", "message": "Simulation not running"}
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        state_id = f"{state_name}_{timestamp}"
-        
-        state_data = {
-            "step": self.current_step,
-            "timestamp": datetime.now().isoformat(),
-            "data": self.get_current_data()
-        }
-        self.saved_states[state_id] = state_data
-        
-        # Save to file with unique filename
-        try:
-            os.makedirs("saved_states", exist_ok=True)
-            with open(f"saved_states/{state_id}.json", "w") as f:
-                json.dump(state_data, f, indent=2)
-            return {"status": "success", "message": f"State '{state_name}' saved", "state_id": state_id}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-    
-    def get_status(self):
-        """Get simulation status"""
-        return {
-            "is_running": self.is_running,
-            "is_paused": self.is_paused,
-            "current_step": self.current_step,
-            "auto_stepping": self.auto_stepping
-        }
