@@ -73,11 +73,15 @@ class SumoManager:
             # Feature: CO2 Emissions (Optional, good for Environmental Metrics)
             co2_emission = traci.lane.getCO2Emission(lane_id)
 
+            # Get Waiting Time for Reward Calculation
+            waiting_time = traci.lane.getWaitingTime(lane_id)
+
             lane_data[lane_id] = {
                 "queue_length": queue_len,
                 "occupancy": occupancy,
                 "avg_speed": avg_speed,
-                "co2": co2_emission
+                "co2": co2_emission,
+                "waiting_time": waiting_time
             }
 
         return {
