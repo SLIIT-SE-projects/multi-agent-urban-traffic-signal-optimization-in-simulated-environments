@@ -71,3 +71,40 @@ class Evaluator:
         plt.savefig(save_path)
         plt.close()
         print(f" Saved Prediction Scatter Plot to {save_path}")
+
+    def plot_time_series_sample(self, predictions, targets, sample_length=100, save_path="experiments/plots/timeseries.png"):
+        if isinstance(predictions, torch.Tensor): predictions = predictions.detach().cpu().numpy()
+        if isinstance(targets, torch.Tensor): targets = targets.detach().cpu().numpy()
+
+        # Simple flatten for visualization:
+        subset_preds = predictions.flatten()[:sample_length]
+        subset_actuals = targets.flatten()[:sample_length]
+
+        plt.figure(figsize=(12, 5))
+        plt.plot(subset_actuals, label='Actual Reality', color='black', linestyle='-', alpha=0.7)
+        plt.plot(subset_preds, label='GNN Prediction', color='green', linestyle='--')
+        
+        plt.title(f'Traffic Flow Prediction Sample (First {sample_length} data points)')
+        plt.xlabel('Time Step (Seconds)')
+        plt.ylabel('Traffic Value (Normalized)')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.savefig(save_path)
+        plt.close()
+        print(f" Saved Time-Series Plot to {save_path}")
+
+    def plot_error_distribution(self, predictions, targets, save_path="experiments/plots/error_hist.png"):
+        if isinstance(predictions, torch.Tensor): predictions = predictions.detach().cpu().numpy()
+        if isinstance(targets, torch.Tensor): targets = targets.detach().cpu().numpy()
+
+        errors = predictions.flatten() - targets.flatten()
+        
+        plt.figure(figsize=(8, 6))
+        plt.hist(errors, bins=50, color='purple', alpha=0.7, edgecolor='black')
+        plt.axvline(0, color='red', linestyle='dashed', linewidth=1)
+        plt.title('Error Distribution (Residuals)')
+        plt.xlabel('Prediction Error')
+        plt.ylabel('Frequency')
+        plt.savefig(save_path)
+        plt.close()
+        print(f" Saved Error Histogram to {save_path}")
