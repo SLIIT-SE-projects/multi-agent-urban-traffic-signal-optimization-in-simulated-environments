@@ -14,7 +14,7 @@ from src.graphBuilder.graph_builder import TrafficGraphBuilder
 SUMO_CONFIG = "simulation/scenario.sumocfg"
 SUMO_NET = "simulation/network.net.xml"
 OUTPUT_FOLDER = "experiments/raw_data"
-STEPS_TO_COLLECT = 3600 * 24  # Collect data for 24 hours of simulation
+STEPS_TO_COLLECT = 3600 * 2  # Collect data for 2 hours of simulation
 
 def collect_dataset():
     # 1. Create Output Directory if it doesn't exist
