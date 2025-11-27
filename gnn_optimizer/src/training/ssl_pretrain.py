@@ -144,6 +144,8 @@ def train_ssl():
     
     # Generate Scatter plot using the LAST epoch's validation data
     evaluator.plot_predictions_vs_truth(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/scatter.png")
+    evaluator.plot_time_series_sample(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/timeseries.png")
+    evaluator.plot_error_distribution(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/error_hist.png")
     
     print(" Pre-training Complete! Plots saved to {PLOT_SAVE_DIR}")
 
