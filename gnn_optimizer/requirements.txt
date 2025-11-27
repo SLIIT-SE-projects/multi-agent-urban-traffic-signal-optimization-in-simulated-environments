@@ -6,3 +6,4 @@ libsumo
 flask 
 python-socketio 
 matplotlib
+scikit-learn

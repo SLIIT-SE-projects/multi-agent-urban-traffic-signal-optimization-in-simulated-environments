@@ -11,10 +11,12 @@ if project_root not in sys.path:
 
 from src.training.dataset_loader import TrafficDataset
 from src.models.hgat_core import RecurrentHGAT
+from src.utils.evaluator import Evaluator 
 
 # CONFIGURATION 
 DATASET_PATH = "experiments/raw_data/traffic_data_1hr.pt"
 MODEL_SAVE_PATH = "experiments/saved_models/pretrained_gnn.pth"
+PLOT_SAVE_DIR = "experiments/plots"
 EPOCHS = 10
 HIDDEN_DIM = 32
 LEARNING_RATE = 0.001
@@ -30,7 +32,13 @@ class StatePredictor(nn.Module):
         return self.decoder(hidden_state)
 
 def train_ssl():
-    # 1. Load Data
+    # 1. Setup Directories
+    if not os.path.exists("experiments/saved_models"):
+        os.makedirs("experiments/saved_models")
+    if not os.path.exists(PLOT_SAVE_DIR):
+        os.makedirs(PLOT_SAVE_DIR)
+
+    # 2. Load Data
     print(" Loading Dataset...")
     dataset = TrafficDataset(root="experiments", file_path=DATASET_PATH)
     
@@ -45,22 +53,23 @@ def train_ssl():
     
     print(f" Data Split: {len(train_dataset)} Training steps | {len(test_dataset)} Testing steps")
     
-    # 2. Initialize Model
+    # Initialize Model & Evaluator
     print(" Initializing Model...")
     sample_graph = dataset[0]
     metadata = sample_graph.metadata()
     
     gnn_model = RecurrentHGAT(HIDDEN_DIM, 4, 2, metadata)
     predictor = StatePredictor(HIDDEN_DIM, 5)
+    evaluator = Evaluator()
     
     optimizer = optim.Adam(list(gnn_model.parameters()) + list(predictor.parameters()), lr=LEARNING_RATE)
     criterion = nn.MSELoss()
 
     print(" Starting Self-Supervised Pre-training...")
-    
-    if not os.path.exists("experiments/saved_models"):
-        os.makedirs("experiments/saved_models")
 
+    best_val_loss = float('inf')
+
+    # TRAINING LOOP 
     for epoch in range(EPOCHS):
         # A. TRAINING PHASE
         gnn_model.train()
@@ -94,6 +103,10 @@ def train_ssl():
         total_test_loss = 0
         hidden_state_test = None
         
+        # Store all predictions for metrics calculation
+        all_preds = []
+        all_targets = []
+        
         with torch.no_grad(): # Disable gradient calculation for testing
             for t in range(len(test_dataset) - 1):
                 current_data = test_dataset[t]
@@ -105,15 +118,46 @@ def train_ssl():
                 
                 loss = criterion(predicted, target)
                 total_test_loss += loss.item()
+                
+                # Collect for metrics
+                all_preds.append(predicted)
+                all_targets.append(target)
         
         avg_test_loss = total_test_loss / len(test_dataset)
+        
+        # METRICS & LOGGING 
+        cat_preds = torch.cat(all_preds)
+        cat_targets = torch.cat(all_targets)
+        
+        # Calculate R2, MAE, RMSE
+        metrics = evaluator.calculate_metrics(cat_preds, cat_targets)
+        evaluator.log_epoch(avg_train_loss, avg_test_loss)
 
-        print(f" Epoch {epoch+1} | Train Loss: {avg_train_loss:.6f} | Test Loss: {avg_test_loss:.6f}")
+        print(f" Epoch {epoch+1} | Train Loss: {avg_train_loss:.4f} | Test Loss: {avg_test_loss:.4f}")
+        print(f"  Validation Metrics: MAE={metrics['MAE']:.4f}, RMSE={metrics['RMSE']:.4f}, R2={metrics['R2']:.4f}")
 
-    # 4. Save
-    print(" Saving Pre-trained Weights...")
-    torch.save(gnn_model.state_dict(), MODEL_SAVE_PATH)
-    print(" Pre-training Complete!")
+        # save better model 
+        if avg_test_loss < best_val_loss:
+            best_val_loss = avg_test_loss
+            print(f"   New Best Model! Saving to {MODEL_SAVE_PATH}...")
+            torch.save(gnn_model.state_dict(), MODEL_SAVE_PATH)
+        else:
+            print(f"   (Loss did not improve from {best_val_loss:.4f})")
+
+    # 4. Finalize
+    # print(" Saving Pre-trained Weights...")
+    # torch.save(gnn_model.state_dict(), MODEL_SAVE_PATH)
+    
+    # Generate Plots
+    print(" Generating Evaluation Plots...")
+    evaluator.plot_learning_curves(save_path=f"{PLOT_SAVE_DIR}/loss_curve.png")
+    
+    # Generate Scatter plot using the LAST epoch's validation data
+    evaluator.plot_predictions_vs_truth(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/scatter.png")
+    evaluator.plot_time_series_sample(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/timeseries.png")
+    evaluator.plot_error_distribution(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/error_hist.png")
+    
+    print(" Pre-training Complete! Plots saved to {PLOT_SAVE_DIR}")
 
 if __name__ == "__main__":
     train_ssl()
