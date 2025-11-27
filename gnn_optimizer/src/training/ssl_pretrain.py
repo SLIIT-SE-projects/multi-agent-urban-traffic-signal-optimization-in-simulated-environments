@@ -67,7 +67,9 @@ def train_ssl():
 
     print(" Starting Self-Supervised Pre-training...")
 
-    # --- TRAINING LOOP ---
+    best_val_loss = float('inf')
+
+    # TRAINING LOOP 
     for epoch in range(EPOCHS):
         # A. TRAINING PHASE
         gnn_model.train()
@@ -134,9 +136,17 @@ def train_ssl():
         print(f" Epoch {epoch+1} | Train Loss: {avg_train_loss:.4f} | Test Loss: {avg_test_loss:.4f}")
         print(f"  Validation Metrics: MAE={metrics['MAE']:.4f}, RMSE={metrics['RMSE']:.4f}, R2={metrics['R2']:.4f}")
 
+        # save better model 
+        if avg_test_loss < best_val_loss:
+            best_val_loss = avg_test_loss
+            print(f"   New Best Model! Saving to {MODEL_SAVE_PATH}...")
+            torch.save(gnn_model.state_dict(), MODEL_SAVE_PATH)
+        else:
+            print(f"   (Loss did not improve from {best_val_loss:.4f})")
+
     # 4. Finalize
-    print(" Saving Pre-trained Weights...")
-    torch.save(gnn_model.state_dict(), MODEL_SAVE_PATH)
+    # print(" Saving Pre-trained Weights...")
+    # torch.save(gnn_model.state_dict(), MODEL_SAVE_PATH)
     
     # Generate Plots
     print(" Generating Evaluation Plots...")
