@@ -58,6 +58,14 @@ emergency_preemption/**/*.npy
 emergency_preemption/data/scalers/
 emergency_preemption/**/*.pkl
 
+# Trained models / artifacts
+emergency_preemption/models_saved/
+emergency_preemption/**/models_saved/
+emergency_preemption/**/*.h5
+
+# models
+emergency_preemption/models/
+emergency_preemption/**/models/
 
 # evps core simulation configs/networks/routes
 !emergency_preemption/simulation/config/**/*.sumocfg

@@ -38,25 +38,55 @@ class DataLogger:
             print(f"[EVPS Logger] Error at step {step}: {e}")
 
     def _collect_eta_data(self, step):
-        """Internal function to collect EV physics data."""
+        """Internal function to collect EV physics AND Traffic Context data."""
         try:
+            # 1. Basic Physics
             ev_speed = traci.vehicle.getSpeed(self.ev_id)
             ev_accel = traci.vehicle.getAcceleration(self.ev_id)
             ev_lane_id = traci.vehicle.getLaneID(self.ev_id)
             ev_pos = traci.vehicle.getLanePosition(self.ev_id)
             
+            # Distance Calculation
             try:
                 lane_len = traci.lane.getLength(ev_lane_id)
                 dist_to_end_of_lane = lane_len - ev_pos
             except:
                 dist_to_end_of_lane = 0
 
+            # 2. Traffic Context Features
+            
+            # A. Queue Length on current lane
+            # getLastStepHaltingNumber: Returns number of cars with speed < 0.1 m/s
+            queue_len = traci.lane.getLastStepHaltingNumber(ev_lane_id)
+            
+            # B. Leader Vehicle Info
+            # getLeader(vehID, dist): Returns (leaderID, gap) or None if no leader within dist
+            leader_info = traci.vehicle.getLeader(self.ev_id, 200) # Look ahead 200m
+            
+            if leader_info:
+                leader_id, leader_gap = leader_info
+                # Get leader's speed if valid
+                try:
+                    leader_speed = traci.vehicle.getSpeed(leader_id)
+                except:
+                    leader_speed = -1 # Leader might have just left sim
+            else:
+                # No leader ahead? 
+                # Gap is infinite (we cap it at 200 for normalization)
+                leader_gap = 200 
+                # Leader speed is irrelevant/high (we set to EV max speed ~30)
+                leader_speed = 30 
+
             self.eta_training_data.append({
                 "step": step,
                 "ev_id": self.ev_id,
+                # Features
                 "speed": ev_speed,
                 "acceleration": ev_accel,
                 "distance_to_signal": dist_to_end_of_lane,
+                "queue_length": queue_len,
+                "leader_gap": leader_gap,
+                "leader_speed": leader_speed,
                 "lane_id": ev_lane_id
             })
         except traci.TraCIException:
@@ -124,12 +154,12 @@ if __name__ == "__main__":
     
     # 1. Configuration for Testing
     # POINT THIS TO YOUR LOCAL TEST SCENARIO
-    CONFIG_FILE = "simulation/config/test_scenario.sumocfg" 
+    CONFIG_FILE = "emergency_vehicle_preemption/simulation/config/test_scenario.sumocfg" 
     
     # Check if config exists
     if not os.path.exists(CONFIG_FILE):
         # Try looking relative to this script if run from folder
-        CONFIG_FILE = "../../simulation/config/test_scenario.sumocfg"
+        CONFIG_FILE = "emergency_vehicle_preemption/simulation/config/test_scenario.sumocfg"
         
     if not os.path.exists(CONFIG_FILE):
         print(f"Error: Could not find config file at {CONFIG_FILE}")
