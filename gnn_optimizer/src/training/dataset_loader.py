@@ -22,7 +22,8 @@ class TrafficDataset(InMemoryDataset):
         print(f" Loading dataset from: {self.file_path}")
         try:
             # 1. Load the list of HeteroData objects
-            data_list = torch.load(self.file_path)
+            # Set weights_only=False because we trust our own data file
+            data_list = torch.load(self.file_path, weights_only=False)
             print(f"   Found {len(data_list)} graphs.")
             
             # 2. Collate them (Convert list -> Huge efficient Tensor)
