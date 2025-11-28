@@ -38,5 +38,53 @@ class GreenWaveController:
         finally:
             traci.close()
     def control_step(self, step):
+        
+        # 1. Check if EV is in simulation
         if self.ev_id not in traci.vehicle.getIDList():
             return
+        
+        # 2. Get Live Data
+        features = self._get_live_features()
+        if features is None:
+            return
+
+        # 3. Add to buffer
+        self.state_buffer.append(features)
+
+        # 4. Predict only when buffer full
+        if len(self.state_buffer) == self.sequence_length:
+            predicted_eta = self._predict_eta()
+            print(f"Step {step}: Predicted ETA = {predicted_eta:.2f}s")
+
+            if predicted_eta < 30 and not self.preemption_active:
+                self._activate_green_wave()
+
+    def _get_live_features(self):
+        try:
+            speed = traci.vehicle.getSpeed(self.ev_id)
+            accel = traci.vehicle.getAcceleration(self.ev_id)
+            lane_id = traci.vehicle.getLaneID(self.ev_id)
+            pos = traci.vehicle.getLanePosition(self.ev_id)
+
+            try:
+                dist = traci.lane.getLength(lane_id) - pos
+            except:
+                dist = 0
+
+            queue = traci.lane.getLastStepHaltingNumber(lane_id)
+            leader = traci.vehicle.getLeader(self.ev_id, 200)
+
+            if leader:
+                leader_gap = leader[1]
+                try:
+                    leader_speed = traci.vehicle.getSpeed(leader[0])
+                except:
+                    leader_speed = 30
+            else:
+                leader_gap = 200
+                leader_speed = 30
+
+            return [speed, accel, dist, queue, leader_gap, leader_speed]
+
+        except:
+            return None
