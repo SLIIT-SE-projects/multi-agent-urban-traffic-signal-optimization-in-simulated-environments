@@ -1,0 +1,22 @@
+optimization:
+  solver_name: ipopt
+  time_limit: 0.1
+  weight_queue: 100.0
+  weight_switch: 0.1
+logging:
+  level: INFO
+  log_dir: data/logs
+  save_frequency: 50
+mpc:
+  prediction_horizon: 20
+  control_horizon: 5
+  min_green_time: 15
+  max_green_time: 60
+  yellow_time: 4
+platform:
+  sumo_binary: sumo-gui
+  config_file: conf/network/grid_3x3.sumocfg
+  step_length: 1.0
+  warmup_seconds: 0
+  use_gui: true
+network: {}

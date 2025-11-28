@@ -16,7 +16,7 @@ try:
 except ImportError:
     traci = None
 
-from src.traffic_mpc.config.settings import SumoConfig
+from traffic_mpc.config.settings import SumoConfig
 
 logger = logging.getLogger(__name__)
 
