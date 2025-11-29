@@ -38,7 +38,7 @@ class GreenWaveController:
         finally:
             traci.close()
     def control_step(self, step):
-        
+
         # 1. Check if EV is in simulation
         if self.ev_id not in traci.vehicle.getIDList():
             return
@@ -88,3 +88,36 @@ class GreenWaveController:
 
         except:
             return None
+        
+    def _predict_eta(self):
+        raw_sequence = np.array(self.state_buffer)
+
+        feature_cols = [
+            'speed', 'acceleration', 'distance_to_signal',
+            'queue_length', 'leader_gap', 'leader_speed'
+        ]
+
+        scaled_sequence = np.zeros_like(raw_sequence)
+
+        for i in range(len(raw_sequence)):
+            step_df = pd.DataFrame([raw_sequence[i]], columns=feature_cols)
+            scaled_sequence[i] = self.scaler.transform(step_df)[0]
+
+        input_data = scaled_sequence.reshape(1, self.sequence_length, 6)
+        eta_scaled = self.model.predict(input_data, verbose=0)
+        return eta_scaled[0][0]
+
+    def _activate_green_wave(self):
+        try:
+            next_tls = traci.vehicle.getNextTLS(self.ev_id)
+
+            if next_tls:
+                tls_id = next_tls[0][0]
+                traci.trafficlight.setPhase(tls_id, 0)
+                print(f"!!! GREEN WAVE ACTIVATED FOR {tls_id} !!!")
+                self.preemption_active = True
+            else:
+                print("DEBUG: Preemption triggered but no traffic light found.")
+        except Exception as e:
+            print(f"ERROR in _activate_green_wave: {e}")
+
