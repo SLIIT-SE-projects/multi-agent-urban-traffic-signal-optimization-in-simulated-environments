@@ -48,6 +48,10 @@ def start_simulation():
 @app.route('/api/simulation/step', methods=['POST'])
 def step_simulation():
     result = sim_controller.step()
+    # If step succeeded, get current data
+    if result.get("status") == "success":
+        data = data_controller.get_current_data()
+        result.update(data)
     return jsonify(result)
 
 
