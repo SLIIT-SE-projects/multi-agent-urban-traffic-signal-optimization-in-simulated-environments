@@ -132,7 +132,7 @@ class SimulationController:
             with self.step_lock:
                 traci.simulationStep()
                 self.current_step += 1
-            return self.get_current_data()
+            return {"status": "success", "message": "Step executed", "step": self.current_step}
         except Exception as e:
             return {"status": "error", "message": str(e)}
     
