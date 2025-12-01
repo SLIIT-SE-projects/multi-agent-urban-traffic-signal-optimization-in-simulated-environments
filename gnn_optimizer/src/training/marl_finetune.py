@@ -31,6 +31,14 @@ EPSILON_START = 1.0   # Exploration rate start
 EPSILON_END = 0.1     # End: 10% random
 EPSILON_DECAY = 0.995 
 
+def select_action(logits, epsilon):
+    # Random Action
+    if random.random() < epsilon:
+        return torch.randint(0, 4, (logits.size(0),))
+    
+    # Best Action
+    return torch.argmax(logits, dim=1)
+
 def train_marl():
     print(" Starting MARL Fine-Tuning...")
     
@@ -58,6 +66,39 @@ def train_marl():
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     epsilon = EPSILON_START
     
+    # 3. Training Loop (Episodes)
+    for episode in range(1, EPISODES + 1):
+        manager.start()
+        hidden_state = None
+        total_reward = 0
+        loss_sum = 0
+        
+        print(f"\n Episode {episode}/{EPISODES} (Epsilon: {epsilon:.2f})")
+        
+        for t in tqdm(range(STEPS_PER_EPISODE)):
+            # A. Get State
+            snapshot = manager.get_snapshot()
+            data = graph_builder.create_hetero_data(snapshot)
+            
+            # B. Forward Pass
+            action_logits, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
+            
+            # C. Select Action
+            actions_indices = select_action(action_logits, epsilon)
+            
+            # Map indices to IDs for SUMO
+            idx_to_id = {v: k for k, v in graph_builder.tls_map.items()}
+            actions_dict = {idx_to_id[idx]: val.item() for idx, val in enumerate(actions_indices) if idx in idx_to_id}
+            
+            # D. Execute Action
+            manager.apply_actions(actions_dict)
+            manager.step()
+            
+            # E. Calculate Reward
+            # Get NEW snapshot to see effect of action
+            next_snapshot = manager.get_snapshot()
+            reward = calculate_reward(next_snapshot)
+            total_reward += reward
 
 if __name__ == "__main__":
     train_marl()
