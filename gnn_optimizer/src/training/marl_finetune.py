@@ -99,6 +99,38 @@ def train_marl():
             next_snapshot = manager.get_snapshot()
             reward = calculate_reward(next_snapshot)
             total_reward += reward
+            
+            # F. Learning Step
+            # Get probability of the action we took
+            probs = F.softmax(action_logits, dim=1)
+            log_probs = torch.log(probs.gather(1, actions_indices.view(-1, 1)))
+            
+            # Loss = - (LogProb * Reward)
+            scaled_reward = reward / 100.0 
+            loss = -log_probs.mean() * scaled_reward
+            
+            optimizer.zero_grad()
+            loss.backward()
+            # Clip gradients to prevent instability
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
+            
+            # Detach memory
+            hidden_state = hidden_state.detach()
+            loss_sum += loss.item()
+
+        manager.close()
+        
+        # Update Epsilon
+        epsilon = max(EPSILON_END, epsilon * EPSILON_DECAY)
+        
+        avg_loss = loss_sum / STEPS_PER_EPISODE
+        print(f" Episode {episode} Done. Total Reward: {total_reward:.2f} | Avg Loss: {avg_loss:.4f}")
+        
+        # Save periodically
+        torch.save(model.state_dict(), FINAL_MODEL_PATH)
+
+    print(" MARL Fine-Tuning Complete!")
 
 if __name__ == "__main__":
     train_marl()
