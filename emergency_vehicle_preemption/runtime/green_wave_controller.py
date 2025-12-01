@@ -136,26 +136,30 @@ class GreenWaveController:
 
     def _activate_green_wave(self):
         """
-        Basic Action: Turns the next traffic light Green.
+        Action: Turns traffic light Green.
         """
         try:
             # Get the next traffic light (TLS) on the route
             next_tls = traci.vehicle.getNextTLS(self.ev_id)
-
+            
             if next_tls:
-                # next_tls is a list of tuples: (tlsID, tlsIndex, distance, state)
-                tls_id = next_tls[0][0] 
+                tls_id = next_tls[0][0]
                 
-                # COMMAND SUMO: Force Phase 0 (Green)
+                # 1. LOGIC: Force Phase 0 (Green)
                 traci.trafficlight.setPhase(tls_id, 0)
+                
                 
                 print(f"!!! GREEN WAVE ACTIVATED FOR {tls_id} !!!")
                 self.preemption_active = True
+                
+                # 2. VISUAL: Track the vehicle in the GUI
+                traci.gui.trackVehicle("View #0", self.ev_id)
+                traci.gui.setZoom("View #0", 1000) # Zoom in
+                
             else:
                 print("DEBUG: Preemption triggered, but no traffic light found ahead.")
                 
         except Exception as e:
-            # PRINT THE ERROR
             print(f"ERROR in _activate_green_wave: {e}")
 
 if __name__ == "__main__":
