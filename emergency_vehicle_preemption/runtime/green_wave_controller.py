@@ -29,6 +29,7 @@ class GreenWaveController:
             sys.exit(1)
 
         # 2. Initialize Memory Buffer
+        # The LSTM needs the last 10 steps to make 1 prediction
         self.sequence_length = 10
         self.state_buffer = deque(maxlen=self.sequence_length)
         
@@ -67,14 +68,18 @@ class GreenWaveController:
         # 3. Add to buffer
         self.state_buffer.append(features)
 
-        # 4. Predict ETA (Only if we have enough history)
+        # 4. Predict ETA
         if len(self.state_buffer) == self.sequence_length:
             predicted_eta = self._predict_eta()
             
-            print(f"Step {step}: Predicted ETA = {predicted_eta:.2f}s")
+            # Get current distance for display
+            # self.state_buffer[-1] is the latest [speed, accel, dist, queue, gap, l_speed]
+            current_dist = self.state_buffer[-1][2] 
+            current_speed = self.state_buffer[-1][0]
+
+            print(f"Step {step}: Dist={current_dist:.1f}m | Speed={current_speed:.1f} | ETA={predicted_eta:.2f}s")
             
-            # 5. TRIGGER ACTION (The Green Wave)
-            # Threshold: If EV is 30 seconds away, clear the path
+            # 5. TRIGGER ACTION
             if predicted_eta < 30 and not self.preemption_active:
                 self._activate_green_wave()
 
@@ -139,9 +144,7 @@ class GreenWaveController:
         Action: Turns traffic light Green.
         """
         try:
-            # Get the next traffic light (TLS) on the route
             next_tls = traci.vehicle.getNextTLS(self.ev_id)
-            
             if next_tls:
                 tls_id = next_tls[0][0]
                 
