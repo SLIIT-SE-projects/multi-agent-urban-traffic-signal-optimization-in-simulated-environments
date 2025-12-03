@@ -11,7 +11,7 @@ from collections import deque
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "../models/saved/eta_predictor.h5")
 SCALER_PATH = os.path.join(BASE_DIR, "../data/scalers/eta_scaler.pkl")
-SUMO_CONFIG = os.path.join(BASE_DIR, "../simulation/config/test_scenario.sumocfg") 
+SUMO_CONFIG = os.path.join(BASE_DIR, "../simulation/config/mega_scenario_generator.py") 
 
 class GreenWaveController:
     def __init__(self, ev_id="EV_1"):

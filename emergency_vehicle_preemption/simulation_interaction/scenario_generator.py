@@ -41,6 +41,8 @@ class ScenarioGenerator:
             "--grid.number=3",
             "--grid.length=200",
             "--tls.guess",
+            "--tls.guess.threshold", "0",
+            "--tls.default-type", "actuated",
             "--output-file", self.net_file
         ]
 

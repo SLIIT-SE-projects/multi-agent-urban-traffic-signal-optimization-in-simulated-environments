@@ -9,180 +9,108 @@ from datetime import datetime
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../data/raw/")
 
 class DataLogger:
-    def __init__(self, ev_id="EV_1"):
-        """
-        Initializes the logger.
-        :param ev_id: The ID of the vehicle to track (must match the Route file).
-        """
-        self.ev_id = ev_id
+    def __init__(self):
+        """Initializes the logger to track MULTIPLE EVs."""
         self.eta_training_data = []
-        self.safety_training_data = []
-        
-        # Ensure output directory exists immediately
+        # No 'ev_id' passed in init, we find them dynamically
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        print(f"[EVPS Logger] Initialized. Watching for vehicle: {self.ev_id}")
+        print(f"[EVPS Logger] Initialized. Watching for ALL vehicles starting with 'EV_'")
 
     def log_step(self, step):
-        """
-        THIS IS THE FUNCTION YOUR TEAM MEMBER MUST CALL.
-        It should be called once every simulation step.
-        """
+        """Scans for any EV in the simulation and logs its data."""
         try:
-            # Check if our EV is in the simulation
+            # Get all vehicle IDs currently in the simulation
             vehicle_ids = traci.vehicle.getIDList()
-            if self.ev_id in vehicle_ids:
-                self._collect_eta_data(step)
-                self._collect_safety_data(step)
-        except Exception as e:
-            # Don't crash the main simulation if logging fails
-            print(f"[EVPS Logger] Error at step {step}: {e}")
-
-    def _collect_eta_data(self, step):
-        """Internal function to collect EV physics AND Traffic Context data."""
-        try:
-            # 1. Basic Physics
-            ev_speed = traci.vehicle.getSpeed(self.ev_id)
-            ev_accel = traci.vehicle.getAcceleration(self.ev_id)
-            ev_lane_id = traci.vehicle.getLaneID(self.ev_id)
-            ev_pos = traci.vehicle.getLanePosition(self.ev_id)
             
-            # Distance Calculation
+            # Filter for Emergency Vehicles
+            active_evs = [v_id for v_id in vehicle_ids if v_id.startswith("EV_")]
+            
+            for ev_id in active_evs:
+                self._collect_eta_data(step, ev_id)
+                
+        except Exception as e:
+            print(f"Logger Error step {step}: {e}")
+
+    def _collect_eta_data(self, step, ev_id):
+        try:
+            # Physics
+            ev_speed = traci.vehicle.getSpeed(ev_id)
+            ev_accel = traci.vehicle.getAcceleration(ev_id)
+            ev_lane_id = traci.vehicle.getLaneID(ev_id)
+            ev_pos = traci.vehicle.getLanePosition(ev_id)
+            
             try:
                 lane_len = traci.lane.getLength(ev_lane_id)
-                dist_to_end_of_lane = lane_len - ev_pos
+                dist_to_signal = lane_len - ev_pos
             except:
-                dist_to_end_of_lane = 0
+                dist_to_signal = 0
 
-            # 2. Traffic Context Features
-            
-            # A. Queue Length on current lane
-            # getLastStepHaltingNumber: Returns number of cars with speed < 0.1 m/s
+            # Traffic Context
             queue_len = traci.lane.getLastStepHaltingNumber(ev_lane_id)
-            
-            # B. Leader Vehicle Info
-            # getLeader(vehID, dist): Returns (leaderID, gap) or None if no leader within dist
-            leader_info = traci.vehicle.getLeader(self.ev_id, 200) # Look ahead 200m
+            leader_info = traci.vehicle.getLeader(ev_id, 200)
             
             if leader_info:
-                leader_id, leader_gap = leader_info
-                # Get leader's speed if valid
-                try:
-                    leader_speed = traci.vehicle.getSpeed(leader_id)
-                except:
-                    leader_speed = -1 # Leader might have just left sim
+                leader_gap = leader_info[1]
+                try: leader_speed = traci.vehicle.getSpeed(leader_info[0])
+                except: leader_speed = 30
             else:
-                # No leader ahead? 
-                # Gap is infinite (we cap it at 200 for normalization)
-                leader_gap = 200 
-                # Leader speed is irrelevant/high (we set to EV max speed ~30)
-                leader_speed = 30 
+                leader_gap = 200
+                leader_speed = 30 # Max speed assumption
 
             self.eta_training_data.append({
+                "run_id": "mega_run", # Group them all together
                 "step": step,
-                "ev_id": self.ev_id,
-                # Features
+                "ev_id": ev_id, # Track which EV this is
                 "speed": ev_speed,
                 "acceleration": ev_accel,
-                "distance_to_signal": dist_to_end_of_lane,
+                "distance_to_signal": dist_to_signal,
                 "queue_length": queue_len,
                 "leader_gap": leader_gap,
-                "leader_speed": leader_speed,
-                "lane_id": ev_lane_id
+                "leader_speed": leader_speed
             })
-        except traci.TraCIException:
-            pass # Vehicle might have just left
-
-    def _collect_safety_data(self, step):
-        """Internal function to collect Intersection data."""
-        try:
-            next_tls = traci.vehicle.getNextTLS(self.ev_id)
-            if next_tls:
-                tls_id, tls_index, dist_to_tls, state = next_tls[0]
-                
-                # Only log if approaching (e.g., < 100m)
-                if dist_to_tls < 100:
-                    self._snapshot_intersection(step, tls_id)
-        except traci.TraCIException:
+        except:
             pass
 
-    def _snapshot_intersection(self, step, tls_id):
-        """Helper to snapshot the intersection state."""
-        controlled_lanes = traci.trafficlight.getControlledLanes(tls_id)
-        queues = []
-        speeds = []
-        
-        for lane in controlled_lanes:
-            queues.append(traci.lane.getLastStepHaltingNumber(lane))
-            speeds.append(traci.lane.getLastStepMeanSpeed(lane))
-
-        current_phase = traci.trafficlight.getPhase(tls_id)
-
-        self.safety_training_data.append({
-            "step": step,
-            "tls_id": tls_id,
-            "max_queue_length": max(queues) if queues else 0,
-            "mean_intersection_speed": np.mean(speeds) if speeds else 0,
-            "current_phase": current_phase
-        })
-
     def save_data(self):
-        """
-        MUST BE CALLED AT THE END OF SIMULATION.
-        """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
         if self.eta_training_data:
-            df_eta = pd.DataFrame(self.eta_training_data)
-            eta_path = os.path.join(OUTPUT_DIR, f"eta_data_{timestamp}.csv")
-            df_eta.to_csv(eta_path, index=False)
-            print(f"[EVPS Logger] Saved ETA data: {eta_path}")
-        else:
-            print("[EVPS Logger] No ETA data collected (EV not seen).")
+            df = pd.DataFrame(self.eta_training_data)
+            path = os.path.join(OUTPUT_DIR, f"eta_data_MEGA_{timestamp}.csv")
+            df.to_csv(path, index=False)
+            print(f"[EVPS Logger] Saved MEGA dataset with {len(df)} rows to {path}")
 
-        if self.safety_training_data:
-            df_safety = pd.DataFrame(self.safety_training_data)
-            safety_path = os.path.join(OUTPUT_DIR, f"safety_data_{timestamp}.csv")
-            df_safety.to_csv(safety_path, index=False)
-            print(f"[EVPS Logger] Saved Safety data: {safety_path}")
-
-
-# --- STANDALONE TESTING BLOCK ---
-# This runs ONLY if run 'python data_logger.py' directly.
-# It will NOT run if other component imports this file.
+# --- MAIN EXECUTION FOR MEGA RUN ---
 if __name__ == "__main__":
-    print("--- RUNNING IN STANDALONE TEST MODE ---")
-    
-    # 1. Configuration for Testing
-    # POINT THIS TO YOUR LOCAL TEST SCENARIO
-    CONFIG_FILE = "emergency_vehicle_preemption/simulation/config/test_scenario.sumocfg" 
+    # Point to the new MEGA config relative to this script
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    CONFIG_FILE = os.path.join(BASE_DIR, "../simulation/config/mega_scenario.sumocfg")
     
     # Check if config exists
     if not os.path.exists(CONFIG_FILE):
-        # Try looking relative to this script if run from folder
-        CONFIG_FILE = "emergency_vehicle_preemption/simulation/config/test_scenario.sumocfg"
-        
-    if not os.path.exists(CONFIG_FILE):
-        print(f"Error: Could not find config file at {CONFIG_FILE}")
-        print("Please run scenario_generator.py first.")
+        print(f"Error: Config file not found at {CONFIG_FILE}")
+        print("Run 'mega_scenario_generator.py' first!")
         sys.exit(1)
 
-    # 2. Start SUMO
-    sumo_cmd = ["sumo-gui", "-c", CONFIG_FILE]
-    traci.start(sumo_cmd)
+    # Use 'sumo' (CLI) for speed, not GUI
+    print("--- STARTING MEGA SIMULATION (50 EVs) ---")
+    sumo_cmd = ["sumo", "-c", CONFIG_FILE]
     
-    # 3. Instantiate the Logger
-    logger = DataLogger(ev_id="EV_1")
-    
-    # 4. Run the Loop
-    step = 0
-    while traci.simulation.getMinExpectedNumber() > 0:
-        traci.simulationStep()
+    try:
+        traci.start(sumo_cmd)
+        logger = DataLogger()
         
-        # --- CALL THE LOGGER ---
-        logger.log_step(step)
-        
-        step += 1
-    
-    # 5. Save and Close
-    traci.close()
-    logger.save_data()
+        step = 0
+        while traci.simulation.getMinExpectedNumber() > 0:
+            traci.simulationStep()
+            logger.log_step(step)
+            step += 1
+            if step % 200 == 0:
+                print(f"Simulating Step {step}...", end="\r")
+                
+        traci.close()
+        logger.save_data()
+        print("\n--- DONE ---")
+    except Exception as e:
+        print(f"Simulation failed: {e}")
+        try: traci.close()
+        except: pass
