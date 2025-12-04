@@ -1,5 +1,13 @@
+import os
+import sys
 import torch
 from torch_geometric.data import InMemoryDataset
+
+# SYSTEM PATH FIX 
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 from src.config import FileConfig
 
 class TrafficDataset(InMemoryDataset):

@@ -27,7 +27,7 @@ class ModelConfig:
 
 class TrainConfig:
     # DATA CONFIGURATION
-    STEPS_TO_COLLECT = 3600 * 2  # 2 hours of simulation data
+    STEPS_TO_COLLECT = 3600  # 2 hours of simulation data
 
     # SSL TRAINING SETTINGS
     SSL_EPOCHS = 10
@@ -36,7 +36,7 @@ class TrainConfig:
     TRAIN_SPLIT = 0.8
 
     # MARL TRAINING SETTINGS
-    MARL_EPISODES = 50
+    MARL_EPISODES = 5
     MARL_STEPS_PER_EPISODE = 1000
     MARL_LEARNING_RATE = 0.0005
     ACTION_INTERVAL = 5    # Action every 5 seconds
