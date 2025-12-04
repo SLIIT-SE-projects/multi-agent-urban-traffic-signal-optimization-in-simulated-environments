@@ -15,12 +15,14 @@ from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
 from src.models.hgat_core import RecurrentHGAT
 from src.training.reward_function import calculate_reward
+from src.utils.evaluator import Evaluator
 
 # CONFIGURATION 
 SUMO_CONFIG = "simulation/scenario.sumocfg"
 SUMO_NET = "simulation/network.net.xml"
 PRETRAINED_PATH = "experiments/saved_models/pretrained_gnn.pth"
 FINAL_MODEL_PATH = "experiments/saved_models/final_marl_model.pth"
+PLOT_SAVE_DIR = "experiments/plots"
 
 # Training Hyperparameters
 EPISODES = 5          # Total simulation runs for fine-tuning
@@ -34,7 +36,8 @@ EPSILON_DECAY = 0.995
 def select_action(logits, epsilon):
     # Random Action
     if random.random() < epsilon:
-        return torch.randint(0, 4, (logits.size(0),))
+        num_actions = logits.size(1)
+        return torch.randint(0, num_actions, (logits.size(0),))
     
     # Best Action
     return torch.argmax(logits, dim=1)
@@ -45,6 +48,7 @@ def train_marl():
     # 1. Initialize Components
     manager = SumoManager(SUMO_CONFIG, use_gui=False)
     graph_builder = TrafficGraphBuilder(SUMO_NET)
+    evaluator = Evaluator()
     
     # Get a dummy snapshot to init model metadata
     manager.start()
@@ -65,13 +69,20 @@ def train_marl():
 
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     epsilon = EPSILON_START
+
+    # METRIC HISTORY LISTS
+    history_rewards = []
+    history_queues = []
+    history_losses = []
     
     # 3. Training Loop (Episodes)
     for episode in range(1, EPISODES + 1):
         manager.start()
         hidden_state = None
-        total_reward = 0
-        loss_sum = 0
+        
+        ep_reward = 0
+        ep_loss = 0
+        ep_queue_sum = 0
         
         print(f"\n Episode {episode}/{EPISODES} (Epsilon: {epsilon:.2f})")
         
@@ -79,6 +90,10 @@ def train_marl():
             # A. Get State
             snapshot = manager.get_snapshot()
             data = graph_builder.create_hetero_data(snapshot)
+            
+            # Track Queue
+            step_queue = sum([l['queue_length'] for l in snapshot['lanes'].values()])
+            ep_queue_sum += step_queue
             
             # B. Forward Pass
             action_logits, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
@@ -98,7 +113,7 @@ def train_marl():
             # Get NEW snapshot to see effect of action
             next_snapshot = manager.get_snapshot()
             reward = calculate_reward(next_snapshot)
-            total_reward += reward
+            ep_reward += reward
             
             # F. Learning Step
             # Get probability of the action we took
@@ -117,10 +132,22 @@ def train_marl():
             
             # Detach memory
             hidden_state = hidden_state.detach()
-            loss_sum += loss.item()
+            ep_loss += loss.item()
 
         manager.close()
+        
+        # Update History
+        epsilon = max(EPSILON_END, epsilon * EPSILON_DECAY)
+        avg_loss = ep_loss / STEPS_PER_EPISODE
+        avg_queue = ep_queue_sum / STEPS_PER_EPISODE
+        
+        history_rewards.append(ep_reward)
+        history_queues.append(avg_queue)
+        history_losses.append(avg_loss)
+        
+        print(f" Episode {episode} Done. Reward: {ep_reward:.2f} | Avg Queue: {avg_queue:.2f} | Avg Loss: {avg_loss:.4f}")
 
+        # Run Testing every 5 episodes
         if episode % 5 == 0:
             test_score = evaluate_model(model, graph_builder, episode)
             
@@ -128,14 +155,12 @@ def train_marl():
             # if test_score > best_test_score:
             #     torch.save(model.state_dict(), "best_marl_model.pth")
         
-        # Update Epsilon
-        epsilon = max(EPSILON_END, epsilon * EPSILON_DECAY)
-        
-        avg_loss = loss_sum / STEPS_PER_EPISODE
-        print(f" Episode {episode} Done. Total Reward: {total_reward:.2f} | Avg Loss: {avg_loss:.4f}")
-        
         # Save periodically
         torch.save(model.state_dict(), FINAL_MODEL_PATH)
+
+    # 4. Plot Results
+    print(" Generating MARL Plots...")
+    evaluator.plot_marl_performance(history_rewards, history_queues, history_losses, save_dir=PLOT_SAVE_DIR)
 
     print(" MARL Fine-Tuning Complete!")
 
