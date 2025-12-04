@@ -5,11 +5,11 @@ import torch
 from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
 from src.models.hgat_core import RecurrentHGAT
+from src.config import SimConfig, GraphConfig, TrainConfig, ModelConfig
 
 # CONFIG
-BASE_DIR = os.path.dirname(__file__)
-SUMO_CONFIG = os.path.abspath(os.path.join(BASE_DIR, "..", "simulation", "scenario.sumocfg"))
-SUMO_NET = os.path.abspath(os.path.join(BASE_DIR, "..", "simulation", "network.net.xml"))
+SUMO_CONFIG = SimConfig.SUMO_CFG
+SUMO_NET = SimConfig.NET_FILE
 
 
 def main():
@@ -26,9 +26,9 @@ def main():
     # 3. Initialize Model
     print("\n Initializing Recurrent HGAT Model...")
     model = RecurrentHGAT(
-        hidden_channels=32, 
-        out_channels=4,     # Assuming 4 Signal Phases
-        num_heads=2, 
+        hidden_channels=TrainConfig.HIDDEN_DIM, 
+        out_channels=GraphConfig.NUM_SIGNAL_PHASES,     # Assuming 4 Signal Phases
+        num_heads=ModelConfig.NUM_HEADS, 
         metadata=data.metadata()
     )
     

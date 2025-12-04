@@ -2,6 +2,7 @@ import torch
 from torch_geometric.data import HeteroData
 import sumolib
 import numpy as np
+from src.config import GraphConfig
 
 class TrafficGraphBuilder:
     def __init__(self, net_file_path):
@@ -91,16 +92,16 @@ class TrafficGraphBuilder:
         # --- 1. Node Features (Dynamic) ---
         
         # A. Intersection Features & Positions
-        x_inter = torch.zeros((self.num_intersections, 5), dtype=torch.float)
+        x_inter = torch.zeros((self.num_intersections, GraphConfig.INTERSECTION_INPUT_DIM), dtype=torch.float)
         pos_inter = [[0.0, 0.0] for _ in range(self.num_intersections)]
         
         for tls_id, info in snapshot['intersections'].items():
             if tls_id in self.tls_map:
                 idx = self.tls_map[tls_id]
                 # Features
-                p_idx = int(info['phase_index']) % 4
+                p_idx = int(info['phase_index']) % GraphConfig.NUM_SIGNAL_PHASES
                 x_inter[idx, p_idx] = 1.0 
-                x_inter[idx, 4] = float(info['time_to_switch'])
+                x_inter[idx, GraphConfig.NUM_SIGNAL_PHASES] = float(info['time_to_switch'])
                 # Position
                 sumo_node = self.net.getNode(tls_id)
                 if sumo_node:
@@ -111,7 +112,7 @@ class TrafficGraphBuilder:
         data['intersection'].pos = torch.tensor(pos_inter, dtype=torch.float)
 
         # B. Lane Features & Positions
-        x_lane = torch.zeros((self.num_lanes, 2), dtype=torch.float)
+        x_lane = torch.zeros((self.num_lanes, GraphConfig.LANE_INPUT_DIM), dtype=torch.float)
         pos_lane = [[0.0, 0.0] for _ in range(self.num_lanes)]
 
         for lane_id, info in snapshot['lanes'].items():

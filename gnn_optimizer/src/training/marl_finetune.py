@@ -11,6 +11,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if project_root not in sys.path:
     sys.path.append(project_root)
 
+from src.config import FileConfig, TrainConfig, SimConfig, GraphConfig, ModelConfig
 from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
 from src.models.hgat_core import RecurrentHGAT
@@ -18,20 +19,20 @@ from src.training.reward_function import calculate_reward
 from src.utils.evaluator import Evaluator
 
 # CONFIGURATION 
-SUMO_CONFIG = "simulation/scenario.sumocfg"
-SUMO_NET = "simulation/network.net.xml"
-PRETRAINED_PATH = "experiments/saved_models/pretrained_gnn.pth"
-FINAL_MODEL_PATH = "experiments/saved_models/final_marl_model.pth"
-PLOT_SAVE_DIR = "experiments/plots"
+SUMO_CONFIG = SimConfig.SUMO_CFG
+SUMO_NET = SimConfig.NET_FILE
+PRETRAINED_PATH = FileConfig.PRETRAINED_MODEL_PATH
+FINAL_MODEL_PATH = FileConfig.FINAL_MARL_MODEL_PATH
+PLOT_SAVE_DIR = FileConfig.PLOTS_DIR
 
 # Training Hyperparameters
-EPISODES = 5          # Total simulation runs for fine-tuning
-STEPS_PER_EPISODE = 500 # Steps per run
-LEARNING_RATE = 0.0005
-GAMMA = 0.99          # Discount factor for future rewards
-EPSILON_START = 1.0   # Exploration rate start
-EPSILON_END = 0.1     # End: 10% random
-EPSILON_DECAY = 0.995 
+EPISODES = TrainConfig.MARL_EPISODES          # Total simulation runs for fine-tuning
+STEPS_PER_EPISODE = TrainConfig.MARL_STEPS_PER_EPISODE # Steps per run
+LEARNING_RATE = TrainConfig.MARL_LEARNING_RATE
+GAMMA = TrainConfig.MARL_GAMMA       # Discount factor for future rewards
+EPSILON_START = TrainConfig.EPSILON_START   # Exploration rate start
+EPSILON_END = TrainConfig.EPSILON_END    # End: 10% random
+EPSILON_DECAY = TrainConfig.EPSILON_DECAY  # Decay per episode
 
 def select_action(logits, epsilon):
     # Random Action
@@ -59,7 +60,7 @@ def train_marl():
     
     # 2. Load Pre-Trained Model (The "Warm Start")
     print(f" Loading Pre-trained weights from {PRETRAINED_PATH}...")
-    model = RecurrentHGAT(32, 4, 2, data.metadata())
+    model = RecurrentHGAT(TrainConfig.HIDDEN_DIM, GraphConfig.NUM_SIGNAL_PHASES, ModelConfig.NUM_HEADS, data.metadata())
     
     try:
         model.load_state_dict(torch.load(PRETRAINED_PATH, weights_only=True), strict=False)
@@ -148,7 +149,7 @@ def train_marl():
         print(f" Episode {episode} Done. Reward: {ep_reward:.2f} | Avg Queue: {avg_queue:.2f} | Avg Loss: {avg_loss:.4f}")
 
         # Run Testing every 5 episodes
-        if episode % 5 == 0:
+        if episode % TrainConfig.MARL_TESTING_EPISODES == 0:
             test_score = evaluate_model(model, graph_builder, episode)
             
             # Save "Best Model" based on Test Score

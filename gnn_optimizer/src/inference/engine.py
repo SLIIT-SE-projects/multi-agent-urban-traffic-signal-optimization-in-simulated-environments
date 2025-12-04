@@ -10,6 +10,7 @@ import torch
 from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
 from src.models.hgat_core import RecurrentHGAT
+from src.config import SimConfig, GraphConfig, TrainConfig, ModelConfig
 
 class RealTimeInferenceEngine:
     def __init__(self, config_path, net_path, use_gui=True):
@@ -29,9 +30,9 @@ class RealTimeInferenceEngine:
         
         # Init Model
         self.model = RecurrentHGAT(
-            hidden_channels=32,
-            out_channels=4, # 4 Phases
-            num_heads=2,
+            hidden_channels=TrainConfig.HIDDEN_DIM,
+            out_channels=GraphConfig.NUM_SIGNAL_PHASES, # 4 Phases
+            num_heads=ModelConfig.NUM_HEADS,
             metadata=data.metadata()
         )
         self.model.eval() 
@@ -83,8 +84,8 @@ class RealTimeInferenceEngine:
 
 # Direct Run for Testing
 if __name__ == "__main__":
-    CONFIG = "simulation/scenario.sumocfg"
-    NET = "simulation/network.net.xml"
+    CONFIG = SimConfig.SUMO_CFG
+    NET = SimConfig.NET_FILE
     
     # Check if files exist before running to avoid confusing errors
     if not os.path.exists(CONFIG):

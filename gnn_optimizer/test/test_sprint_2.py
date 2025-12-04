@@ -4,11 +4,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
 from src.utils.visualizer import plot_graph_topology_ver_2
+from src.config import SimConfig
 
 # --- CONFIGURATION ---
 # Update these to your actual file paths
-SUMO_CONFIG_PATH = "simulation/scenario.sumocfg" # Your SUMO config file
-SUMO_NET_PATH = "simulation/network.net.xml" # Your map file
+SUMO_CONFIG_PATH = SimConfig.SUMO_CFG # Your SUMO config file
+SUMO_NET_PATH = SimConfig.NET_FILE # Your map file
 
 def main():
     if not os.path.exists(SUMO_NET_PATH):

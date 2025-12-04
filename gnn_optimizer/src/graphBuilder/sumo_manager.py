@@ -2,6 +2,7 @@ import traci
 import sumolib
 import os
 import sys
+from src.config import GraphConfig
 
 class SumoManager:
     def __init__(self, config_path, use_gui=True):
@@ -101,7 +102,7 @@ class SumoManager:
                         num_phases = len(logics[0].phases)
                         self.phase_counts[tls_id] = num_phases
                     else:
-                        self.phase_counts[tls_id] = 4 
+                        self.phase_counts[tls_id] = GraphConfig.NUM_SIGNAL_PHASES 
 
                 # 2. Modulo Arithmetic to ensure safety
                 max_phases = self.phase_counts[tls_id]

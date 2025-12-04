@@ -1,3 +1,5 @@
+from src.config import TrainConfig
+
 def calculate_reward(snapshot):
 
     total_queue = 0
@@ -9,8 +11,8 @@ def calculate_reward(snapshot):
         total_wait += info['waiting_time'] 
 
     # Weights
-    w_queue = 1.0
-    w_wait = 0.01 
+    w_queue = TrainConfig.W_QUEUE
+    w_wait = TrainConfig.W_WAIT
     
     penalty = (w_queue * total_queue) + (w_wait * total_wait)
     
