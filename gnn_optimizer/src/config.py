@@ -27,6 +27,8 @@ class ModelConfig:
     USE_GRU = True     # Recurrent Wrapper
 
 class TrainConfig:
+    # DATA CONFIGURATION
+    STEPS_TO_COLLECT = 3600 * 2  # 2 hours of simulation data
     # SSL TRAINING SETTINGS
     SSL_EPOCHS = 10
     SSL_LEARNING_RATE = 0.001
