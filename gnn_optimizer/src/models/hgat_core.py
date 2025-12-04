@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import HeteroConv, GATConv, Linear
 
 # --- IMPORT THE NEW MODULES ---
+from src.config import ModelConfig
 from src.models.policy_head import TrafficPolicyHead
 from src.models.uncertainty import BayesianDropout
 
@@ -33,7 +34,7 @@ class RecurrentHGAT(nn.Module):
         self.gru = nn.GRUCell(gnn_out_dim, hidden_channels)
 
         # 4. Uncertainty Module (The New Class)
-        self.mc_dropout = BayesianDropout(p=0.3)
+        self.mc_dropout = BayesianDropout(p=ModelConfig.DROPOUT_RATE)
 
         # 5. Decision Head (The New Class)
         self.policy_head = TrafficPolicyHead(hidden_channels, out_channels)
