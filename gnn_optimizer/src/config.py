@@ -21,7 +21,6 @@ class GraphConfig:
     LANE_INPUT_DIM = 2     # Queue + Speed (Add more if using CO2 etc)
 
 class ModelConfig:
-    HIDDEN_DIM = 32
     NUM_HEADS = 2      # For GATConv
     DROPOUT_RATE = 0.3 # Uncertainty Mechanism
     USE_GRU = True     # Recurrent Wrapper
@@ -29,8 +28,10 @@ class ModelConfig:
 class TrainConfig:
     # DATA CONFIGURATION
     STEPS_TO_COLLECT = 3600 * 2  # 2 hours of simulation data
+
     # SSL TRAINING SETTINGS
     SSL_EPOCHS = 10
+    HIDDEN_DIM = 32
     SSL_LEARNING_RATE = 0.001
     TRAIN_SPLIT = 0.8
 
