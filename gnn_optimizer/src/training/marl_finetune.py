@@ -15,12 +15,14 @@ from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
 from src.models.hgat_core import RecurrentHGAT
 from src.training.reward_function import calculate_reward
+from src.utils.evaluator import Evaluator
 
 # CONFIGURATION 
 SUMO_CONFIG = "simulation/scenario.sumocfg"
 SUMO_NET = "simulation/network.net.xml"
 PRETRAINED_PATH = "experiments/saved_models/pretrained_gnn.pth"
 FINAL_MODEL_PATH = "experiments/saved_models/final_marl_model.pth"
+PLOT_SAVE_DIR = "experiments/plots"
 
 # Training Hyperparameters
 EPISODES = 5          # Total simulation runs for fine-tuning
@@ -46,6 +48,7 @@ def train_marl():
     # 1. Initialize Components
     manager = SumoManager(SUMO_CONFIG, use_gui=False)
     graph_builder = TrafficGraphBuilder(SUMO_NET)
+    evaluator = Evaluator()
     
     # Get a dummy snapshot to init model metadata
     manager.start()
@@ -154,6 +157,10 @@ def train_marl():
         
         # Save periodically
         torch.save(model.state_dict(), FINAL_MODEL_PATH)
+
+    # 4. Plot Results
+    print(" Generating MARL Plots...")
+    evaluator.plot_marl_performance(history_rewards, history_queues, history_losses, save_dir=PLOT_SAVE_DIR)
 
     print(" MARL Fine-Tuning Complete!")
 
