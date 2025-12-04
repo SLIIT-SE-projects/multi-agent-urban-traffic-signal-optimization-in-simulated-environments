@@ -1,5 +1,6 @@
 import torch
 from torch_geometric.data import InMemoryDataset
+from src.config import FileConfig
 
 class TrafficDataset(InMemoryDataset):
     def __init__(self, root, file_path, transform=None, pre_transform=None):
@@ -37,7 +38,7 @@ class TrafficDataset(InMemoryDataset):
 # Simple Test Block
 if __name__ == "__main__":
     # Test loading the data we just collected
-    FILE_PATH = "experiments/raw_data/traffic_data_1hr.pt"
+    FILE_PATH = FileConfig.DATASET_PATH
     
     try:
         dataset = TrafficDataset(root="experiments", file_path=FILE_PATH)
