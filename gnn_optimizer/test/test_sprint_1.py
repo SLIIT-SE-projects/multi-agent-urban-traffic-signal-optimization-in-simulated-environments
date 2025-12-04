@@ -2,9 +2,10 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.graphBuilder.sumo_manager import SumoManager
+from src.config import SimConfig
 
 # --- CONFIGURATION ---
-SUMO_CONFIG_PATH = "simulation/scenario.sumocfg" 
+SUMO_CONFIG_PATH = SimConfig.SUMO_CFG
 
 def main():
     # 1. Initialize Manager
