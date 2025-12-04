@@ -40,6 +40,8 @@ class TrainConfig:
     MARL_STEPS_PER_EPISODE = 1000
     MARL_LEARNING_RATE = 0.0005
     ACTION_INTERVAL = 5    # Action every 5 seconds
+    MARL_GAMMA = 0.99
+    MARL_TESTING_EPISODES = 5
 
     # Epsilon Greedy (Exploration)
     EPSILON_START = 1.0
@@ -47,8 +49,8 @@ class TrainConfig:
     EPSILON_DECAY = 0.90
 
     # Reward Weights
-    W_QUEUE = 2.0
-    W_WAIT = 0.001
+    W_QUEUE = 1.0
+    W_WAIT = 0.01
 
     # INFERENCE & SAFETY
     UNCERTAINTY_THRESHOLD = 0.05
