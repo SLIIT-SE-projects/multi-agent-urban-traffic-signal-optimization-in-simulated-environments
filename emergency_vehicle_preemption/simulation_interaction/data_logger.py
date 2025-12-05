@@ -33,7 +33,7 @@ class DataLogger:
 
     def _collect_eta_data(self, step, ev_id):
         try:
-            # Physics
+            # 1. Physics Features
             ev_speed = traci.vehicle.getSpeed(ev_id)
             ev_accel = traci.vehicle.getAcceleration(ev_id)
             ev_lane_id = traci.vehicle.getLaneID(ev_id)
@@ -45,28 +45,46 @@ class DataLogger:
             except:
                 dist_to_signal = 0
 
-            # Traffic Context
+            # 2. Traffic Context Features
             queue_len = traci.lane.getLastStepHaltingNumber(ev_lane_id)
-            leader_info = traci.vehicle.getLeader(ev_id, 200)
             
+            leader_info = traci.vehicle.getLeader(ev_id, 200)
             if leader_info:
                 leader_gap = leader_info[1]
                 try: leader_speed = traci.vehicle.getSpeed(leader_info[0])
                 except: leader_speed = 30
             else:
                 leader_gap = 200
-                leader_speed = 30 # Max speed assumption
+                leader_speed = 30 
+
+            # 3. Traffic Light State
+            # getNextTLS returns: [(tlsID, tlsIndex, dist, state), ...]
+            # 'state' is a char: 'r'=Red, 'G'=Green, 'y'=Yellow
+            tls_state_val = 0 # Default to Green (0) if no light found
+            
+            next_tls = traci.vehicle.getNextTLS(ev_id)
+            if next_tls:
+                # Get the state character of the closest light
+                state_char = next_tls[0][3] 
+                if state_char in ['r', 'R', 'u']: # Red states
+                    tls_state_val = 1.0
+                elif state_char in ['y', 'Y']: # Yellow states
+                    tls_state_val = 0.5
+                else: # Green states ('g', 'G')
+                    tls_state_val = 0.0
 
             self.eta_training_data.append({
-                "run_id": "mega_run", # Group them all together
+                "run_id": "mega_run",
                 "step": step,
-                "ev_id": ev_id, # Track which EV this is
+                "ev_id": ev_id,
+                # 7 Features
                 "speed": ev_speed,
                 "acceleration": ev_accel,
                 "distance_to_signal": dist_to_signal,
                 "queue_length": queue_len,
                 "leader_gap": leader_gap,
-                "leader_speed": leader_speed
+                "leader_speed": leader_speed,
+                "tls_state": tls_state_val
             })
         except:
             pass
