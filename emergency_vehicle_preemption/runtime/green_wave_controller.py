@@ -141,29 +141,45 @@ class GreenWaveController:
 
     def _activate_green_wave(self):
         """
-        Action: Turns traffic light Green.
+        Action: Forces EV lane GREEN using absolute state override.
         """
         try:
             next_tls = traci.vehicle.getNextTLS(self.ev_id)
-            if next_tls:
-                tls_id = next_tls[0][0]
-                
-                # 1. LOGIC: Force Phase 0 (Green)
-                traci.trafficlight.setPhase(tls_id, 0)
-                
-                
-                print(f"!!! GREEN WAVE ACTIVATED FOR {tls_id} !!!")
-                self.preemption_active = True
-                
-                # 2. VISUAL: Track the vehicle in the GUI
-                traci.gui.trackVehicle("View #0", self.ev_id)
-                traci.gui.setZoom("View #0", 1000) # Zoom in
-                
-            else:
-                print("DEBUG: Preemption triggered, but no traffic light found ahead.")
-                
+            if not next_tls:
+                return
+
+            tls_id = next_tls[0][0]
+            ev_lane = traci.vehicle.getLaneID(self.ev_id)
+
+            # Get current TLS logic to determine signal count
+            logic = traci.trafficlight.getAllProgramLogics(tls_id)[0]
+            base_state = logic.phases[0].state
+            num_links = len(base_state)
+
+            # Start with existing state
+            new_state = list(base_state)
+
+            # Find signal indices controlling EV lane
+            controlled_links = traci.trafficlight.getControlledLinks(tls_id)
+            for i, links in enumerate(controlled_links):
+                for link in links:
+                    if link[0] == ev_lane:
+                        new_state[i] = 'G'
+
+            # Force absolute state
+            traci.trafficlight.setRedYellowGreenState(
+                tls_id, "".join(new_state)
+            )
+
+            print(f"!!! GREEN OVERRIDE ACTIVATED FOR {tls_id} !!!")
+            self.preemption_active = True
+
+            traci.gui.trackVehicle("View #0", self.ev_id)
+            traci.gui.setZoom("View #0", 1000)
+
         except Exception as e:
             print(f"ERROR in _activate_green_wave: {e}")
+
 
 if __name__ == "__main__":
     controller = GreenWaveController()
