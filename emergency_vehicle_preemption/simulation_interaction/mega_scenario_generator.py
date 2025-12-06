@@ -40,8 +40,8 @@ class MegaScenarioGenerator:
         valid_edges = [e.getID() for e in net.getEdges() if e.allows("passenger")]
         
         all_trips = []
-        SIMULATION_DURATION = 3600  # 1 Hour
-        NUM_EVS = 50                # 50 Ambulances
+        SIMULATION_DURATION = 7200  # 2 Hours
+        NUM_EVS = 200               # 200 EVs
 
         print(f"3. Generating {NUM_EVS} EVs and Background Traffic...")
 
