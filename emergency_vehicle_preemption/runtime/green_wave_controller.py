@@ -141,7 +141,7 @@ class GreenWaveController:
 
     def _activate_green_wave(self):
         """
-        Action: Forces EV lane GREEN using absolute state override.
+        SAFETY OVERRIDE: ALL RED except EV lane.
         """
         try:
             next_tls = traci.vehicle.getNextTLS(self.ev_id)
@@ -151,27 +151,33 @@ class GreenWaveController:
             tls_id = next_tls[0][0]
             ev_lane = traci.vehicle.getLaneID(self.ev_id)
 
-            # Get current TLS logic to determine signal count
+            # Get signal count
             logic = traci.trafficlight.getAllProgramLogics(tls_id)[0]
             base_state = logic.phases[0].state
             num_links = len(base_state)
 
-            # Start with existing state
-            new_state = list(base_state)
+            # 1. Start with ALL RED
+            new_state = ['r'] * num_links
 
-            # Find signal indices controlling EV lane
+            # 2. Find EV lane signal indices
             controlled_links = traci.trafficlight.getControlledLinks(tls_id)
+            found = False
             for i, links in enumerate(controlled_links):
                 for link in links:
                     if link[0] == ev_lane:
                         new_state[i] = 'G'
+                        found = True
 
-            # Force absolute state
+            if not found:
+                print("DEBUG: EV lane not controlled by this TLS.")
+                return
+
+            # 3. Force absolute safe state
             traci.trafficlight.setRedYellowGreenState(
                 tls_id, "".join(new_state)
             )
 
-            print(f"!!! GREEN OVERRIDE ACTIVATED FOR {tls_id} !!!")
+            print(f"!!! SAFE GREEN WAVE FOR {tls_id} !!!")
             self.preemption_active = True
 
             traci.gui.trackVehicle("View #0", self.ev_id)
@@ -179,6 +185,7 @@ class GreenWaveController:
 
         except Exception as e:
             print(f"ERROR in _activate_green_wave: {e}")
+
 
 
 if __name__ == "__main__":
