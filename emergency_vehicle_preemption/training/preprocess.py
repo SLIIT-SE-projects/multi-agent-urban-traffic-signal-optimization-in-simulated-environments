@@ -96,8 +96,15 @@ def main():
     
     # 3. Normalize
     print("Normalizing features...")
-    feature_cols = ['speed', 'acceleration', 'distance_to_signal', 
-                    'queue_length', 'leader_gap', 'leader_speed']
+    feature_cols = [
+        'speed', 
+        'acceleration', 
+        'distance_to_signal', 
+        'queue_length', 
+        'leader_gap', 
+        'leader_speed',
+        'tls_state'
+    ]
     target_col = 'actual_eta'
     
     scaler = MinMaxScaler(feature_range=(0, 1))

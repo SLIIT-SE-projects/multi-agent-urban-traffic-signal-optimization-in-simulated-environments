@@ -2,7 +2,7 @@ import os
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import LSTM, Dense, Dropout, Bidirectional
 from tensorflow.keras.callbacks import EarlyStopping
 
 # --- CONFIGURATION ---
@@ -28,27 +28,23 @@ def load_data():
 
 def build_model(input_shape):
     """
-    Defines the LSTM architecture with Dropout.
+    Defines a Deep Bidirectional LSTM architecture.
     """
     model = Sequential()
     
-    # 1. LSTM Layer
-    # units=64: The "capacity" of the memory
-    # input_shape: (TimeSteps, Features) -> (10, 3)
-    model.add(LSTM(units=64, input_shape=input_shape, return_sequences=False))
-    
-    # 2. Dropout Layer
-    # Randomly turns off neurons to prevent overfitting
+    # 1. Bidirectional LSTM Layer (The Heavy Lifter)
+    model.add(Bidirectional(LSTM(units=128, return_sequences=True), input_shape=input_shape))
     model.add(Dropout(0.2))
     
-    # 3. Output Layer
-    # Single neuron because we predict a single continuous value (ETA)
-    model.add(Dense(units=1, activation='linear'))
+    # 2. Second LSTM Layer (Refinement)
+    model.add(LSTM(units=64, return_sequences=False))
+    model.add(Dropout(0.2))
     
-    # 4. Compile
-    # Adam is the standard optimizer. Mean Squared Error (MSE) is best for regression.
+    # 3. Dense Layers for final regression
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(1, activation='linear'))
+    
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
-    
     return model
 
 def main():
