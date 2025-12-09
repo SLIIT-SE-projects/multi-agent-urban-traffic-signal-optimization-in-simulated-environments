@@ -194,11 +194,11 @@ class GreenWaveController:
 
             leader = traci.vehicle.getLeader(self.ev_id, 200)
             if leader:
-                leader_gap = leader[1]
+                l_gap = leader[1]
                 try:
-                    leader_speed = traci.vehicle.getSpeed(leader[0])
+                    l_speed = traci.vehicle.getSpeed(leader[0])
                 except:
-                    leader_speed = 30
+                    l_speed = 30
             else:
                 l_gap, l_speed = 200, 30
             
