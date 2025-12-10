@@ -169,9 +169,9 @@ class GreenWaveController:
             self.active_override_tls = tls_id
             self.active_green_lane = ev_lane
             
-            traci.vehicle.setColor(self.ev_id, (0, 0, 255, 255))
-            traci.gui.trackVehicle("View #0", self.ev_id)
-            traci.gui.setZoom("View #0", 600)
+            # traci.vehicle.setColor(self.ev_id, (0, 0, 255, 255))
+            # traci.gui.trackVehicle("View #0", self.ev_id)
+            # traci.gui.setZoom("View #0", 600)
 
         except Exception as e:
             print(f"Error enforcing green wave: {e}")
