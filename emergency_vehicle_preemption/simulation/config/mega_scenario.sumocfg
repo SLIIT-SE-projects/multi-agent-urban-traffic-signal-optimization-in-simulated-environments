@@ -1,0 +1,4 @@
+<configuration>
+    <input><net-file value="..\networks\mega_scenario.net.xml"/><route-files value="..\routes\mega_scenario.rou.xml"/></input>
+    <time><begin value="0"/><end value="4000"/></time>
+</configuration>

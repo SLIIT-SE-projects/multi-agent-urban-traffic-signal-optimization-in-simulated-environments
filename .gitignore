@@ -67,12 +67,6 @@ emergency_vehicle_preemption/**/*.h5
 emergency_vehicle_preemption/models/
 emergency_vehicle_preemption/**/models/
 
-# evps core simulation configs/networks/routes
-/emergency_vehicle_preemption/simulation
-!emergency_vehicle_preemption/simulation/config/**/*.sumocfg
-!emergency_vehicle_preemption/simulation/networks/**/*.net.xml
-!emergency_vehicle_preemption/simulation/routes/**/*.rou.xml
-!emergency_vehicle_preemption/simulation/routes/**/*.trips.xml
 
 # ---------------------------
 # SUMO Specific
@@ -80,7 +74,7 @@ emergency_vehicle_preemption/**/models/
 *.dump
 *.xml.gz
 *.sumocfg.save
-*.rou.alt.xml
+# *.rou.alt.xml
 *.synchro.xml
 *.stop.xml
 *.traci.xml
