@@ -38,7 +38,7 @@ saved_states/
 # Model files
 *.pt
 *.pth
-*.pkl
+# *.pkl
 *.ckpt
 *.h5
 *.joblib
@@ -54,9 +54,6 @@ emergency_vehicle_preemption/data/processed/
 emergency_vehicle_preemption/**/*.csv
 emergency_vehicle_preemption/**/*.npy
 
-# Scalers / transforms
-emergency_vehicle_preemption/data/scalers/
-emergency_vehicle_preemption/**/*.pkl
 
 # Trained models / artifacts
 emergency_vehicle_preemption/models_saved/
