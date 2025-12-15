@@ -60,13 +60,47 @@ def train_marl():
     
     # 2. Load Pre-Trained Model (The "Warm Start")
     print(f" Loading Pre-trained weights from {PRETRAINED_PATH}...")
-    model = RecurrentHGAT(TrainConfig.HIDDEN_DIM, GraphConfig.NUM_SIGNAL_PHASES, ModelConfig.NUM_HEADS, data.metadata())
+    # FIX 1: Force out_channels=3 (0,1,2)
+    model = RecurrentHGAT(
+        hidden_channels=TrainConfig.HIDDEN_DIM, 
+        out_channels=GraphConfig.NUM_SIGNAL_PHASES, 
+        num_heads=ModelConfig.NUM_HEADS, 
+        metadata=data.metadata()
+    )
     
-    try:
-        model.load_state_dict(torch.load(PRETRAINED_PATH, weights_only=True), strict=False)
-        print(" Weights loaded successfully.")
-    except Exception as e:
-        print(f" Warning: Could not load weights ({e}). Training from scratch.")
+    # try:
+    #     model.load_state_dict(torch.load(PRETRAINED_PATH, weights_only=True), strict=False)
+    #     print(" Weights loaded.")
+    # except:
+    #     print(" Pre-trained weights not found. Training from scratch.")
+
+    ## if have pretrained marl model, load it
+
+    # ... inside train_marl() ...
+
+    # 1. Try to load existing MARL model (Continue Training)
+    if os.path.exists(FINAL_MODEL_PATH):
+        print(f" Found existing MARL model at {FINAL_MODEL_PATH}. Resuming training...")
+        try:
+            model.load_state_dict(torch.load(FINAL_MODEL_PATH, weights_only=True))
+            print(" Resumed from previous MARL checkpoint.")
+        except Exception as e:
+            print(f" Could not load MARL model ({e}). Trying SSL Pre-trained...")
+            
+            # 2. If MARL fails or doesn't exist, try SSL Pre-trained
+            try:
+                model.load_state_dict(torch.load(PRETRAINED_PATH, weights_only=True), strict=False)
+                print(" Loaded SSL Pre-trained weights.")
+            except:
+                print(" No weights found. Training from SCRATCH.")
+    else:
+        # 3. First time run: Load SSL
+        print(f" No previous MARL run found. Loading SSL weights from {PRETRAINED_PATH}...")
+        try:
+            model.load_state_dict(torch.load(PRETRAINED_PATH, weights_only=True), strict=False)
+            print(" Loaded SSL Pre-trained weights.")
+        except:
+            print(" Training from SCRATCH.")
 
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     epsilon = EPSILON_START
