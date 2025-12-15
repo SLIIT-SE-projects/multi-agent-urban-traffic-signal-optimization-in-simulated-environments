@@ -34,7 +34,6 @@ class DriverDashboard extends StatefulWidget {
 
 class _DriverDashboardState extends State<DriverDashboard> {
   // WebSocket Connection
-  // Use 'localhost' for emulator/web, or your IP for real device
   final _channel = WebSocketChannel.connect(
     Uri.parse('ws://localhost:8000/ws'), 
   );
@@ -43,6 +42,7 @@ class _DriverDashboardState extends State<DriverDashboard> {
   String currentEvId = "EV_0";
   double speed = 0.0;
   double eta = 0.0;
+  double distToTls = 0.0;
   bool isGreenWaveActive = false;
   String currentTls = "";
   LatLng evPosition = const LatLng(0, 0); // Default 0,0 until data comes
@@ -109,8 +109,7 @@ class _DriverDashboardState extends State<DriverDashboard> {
               FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
-                  // Must match REF_LAT/REF_LON from backend
-                  initialCenter: const LatLng(51.5033, -0.1195), 
+                  initialCenter: const LatLng(6.9080, 79.8970), // Rajagiriya, Sri Lanka 
                   initialZoom: 16.0, // Zoom in closer
                 ),
                 children: [
@@ -187,12 +186,20 @@ class _DriverDashboardState extends State<DriverDashboard> {
                         "${eta.toStringAsFixed(1)} s", 
                         Icons.timer
                       ),
+                      // DIVIDER
+                      Container(width: 1, height: 50, color: Colors.grey),
+                      // DISTANCE
+                      _buildInfoColumn(
+                        "DIST", 
+                        "${distToTls.toStringAsFixed(0)} m", 
+                        Icons.traffic
+                      ),
                     ],
                   ),
                 ),
               ),
 
-              // 3. GREEN WAVE ALERT (The "Wow" Factor)
+              // 3. GREEN WAVE ALERT
               if (isGreenWaveActive)
                 Positioned(
                   top: 100,
@@ -263,6 +270,8 @@ class _DriverDashboardState extends State<DriverDashboard> {
         setState(() {
           speed = decoded['speed'];
           eta = decoded['eta'];
+          // Use 0.0 if not present to avoid crash on older backends
+          distToTls = (decoded['dist_to_tls'] ?? 0.0).toDouble(); 
           isGreenWaveActive = decoded['green_wave_active'];
           if (isGreenWaveActive) {
             currentTls = decoded['tls_id'];
