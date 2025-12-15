@@ -6,28 +6,23 @@ from src.config import GraphConfig
 
 class SumoManager:
     def __init__(self, config_path, use_gui=True):
-
         self.config_path = config_path
         self.use_gui = use_gui
         self.connection = None
+        self.green_phases = {}
+        self.pending_switches = {} 
+        self.yellow_timers = {}
+        self.YELLOW_DURATION = 3 
 
-        # Cache to store how many phases each intersection actually has
-        self.phase_counts = {}
-        
-        # Check if SUMO_HOME is set (crucial for sumolib)
         if 'SUMO_HOME' not in os.environ:
             print("WARNING: SUMO_HOME environment variable is not set.")
 
     def start(self):
-        # Locate the SUMO binary
         if self.use_gui:
             sumo_binary = sumolib.checkBinary('sumo-gui')
         else:
             sumo_binary = sumolib.checkBinary('sumo')
-
-        # The command to start SUMO
         cmd = [sumo_binary, "-c", self.config_path, "--start"]
-        
         try:
             traci.start(cmd)
             self.connection = traci.getConnection()
@@ -38,86 +33,104 @@ class SumoManager:
 
     def get_snapshot(self):
 
-        # --- 1. Intersection Data ---
+        # 1. Intersection Data
         tls_ids = traci.trafficlight.getIDList()
         intersection_data = {}
-        
-        for tls_id in tls_ids:
-            # Feature: Current Phase Index
-            current_phase = traci.trafficlight.getPhase(tls_id)
-            
-            # Feature: Time spent in current phase
-            next_switch = traci.trafficlight.getNextSwitch(tls_id)
-            current_time = traci.simulation.getTime()
-            time_to_switch = next_switch - current_time
-            
-            intersection_data[tls_id] = {
-                "phase_index": current_phase,
-                "time_to_switch": time_to_switch
-            }
 
-        # --- 2. Lane Data ---
-        # Focus on lanes that allow vehicles
+        for tls_id in tls_ids:
+            intersection_data[tls_id] = {
+                "phase_index": traci.trafficlight.getPhase(tls_id),
+                "time_to_switch": traci.trafficlight.getNextSwitch(tls_id) - traci.simulation.getTime()
+            }
         lane_ids = traci.lane.getIDList()
         lane_data = {}
-
         for lane_id in lane_ids:
-            # Feature: Queue Length (number of vehicles with speed < 0.1 m/s)
-            queue_len = traci.lane.getLastStepHaltingNumber(lane_id)
-            
-            # Feature: Occupancy (0 to 1 percentage of lane filled)
-            occupancy = traci.lane.getLastStepOccupancy(lane_id)
-            
-            # Feature: Average Speed on the lane (m/s)
-            avg_speed = traci.lane.getLastStepMeanSpeed(lane_id)
-            
-            # Feature: CO2 Emissions (Optional, good for Environmental Metrics)
-            co2_emission = traci.lane.getCO2Emission(lane_id)
-
-            # Get Waiting Time for Reward Calculation
-            waiting_time = traci.lane.getWaitingTime(lane_id)
-
             lane_data[lane_id] = {
-                "queue_length": queue_len,
-                "occupancy": occupancy,
-                "avg_speed": avg_speed,
-                "co2": co2_emission,
-                "waiting_time": waiting_time
+                "queue_length": traci.lane.getLastStepHaltingNumber(lane_id),
+                "occupancy": traci.lane.getLastStepOccupancy(lane_id),
+                "avg_speed": traci.lane.getLastStepMeanSpeed(lane_id),
+                "co2": traci.lane.getCO2Emission(lane_id),
+                "waiting_time": traci.lane.getWaitingTime(lane_id)
             }
+        return {"intersections": intersection_data, "lanes": lane_data}
 
-        return {
-            "intersections": intersection_data,
-            "lanes": lane_data
-        }
-    
+    def _get_yellow_phase(self, tls_id, current_phase):
+        try:
+            logics = traci.trafficlight.getAllProgramLogics(tls_id)[0]
+            phases = logics.phases
+            num_phases = len(phases)
+            next_p_idx = (current_phase + 1) % num_phases
+            next_state = phases[next_p_idx].state.lower()
+            # If next phase is yellow ('y') or amber/red-yellow ('u'), return it
+            if 'y' in next_state or 'u' in next_state:
+                return next_p_idx
+            return current_phase 
+        except: return current_phase
+
     def apply_actions(self, actions_dict):
-
-        for tls_id, phase_index in actions_dict.items():
+        for tls_id, action_idx in actions_dict.items():
             try:
-                # 1. Check Cache
-                if tls_id not in self.phase_counts:
-                    # Query SUMO for the logic definition
+                # 1. Discover Valid Green Phases (Once per light)
+                if tls_id not in self.green_phases:
                     logics = traci.trafficlight.getAllProgramLogics(tls_id)
                     if len(logics) > 0:
-                        num_phases = len(logics[0].phases)
-                        self.phase_counts[tls_id] = num_phases
+                        phases = logics[0].phases
+                        greens = []
+                        for i, p in enumerate(phases):
+                            state = p.state.lower()
+                            # STRICTER CHECK: Must have 'g' AND no 'y' (yellow) AND no 'u' (red-yellow)
+                            if ('g' in state) and ('y' not in state) and ('u' not in state):
+                                greens.append(i)
+                        
+                        if len(greens) == 0: greens = [0] 
+                        self.green_phases[tls_id] = greens
                     else:
-                        self.phase_counts[tls_id] = GraphConfig.NUM_SIGNAL_PHASES 
+                        self.green_phases[tls_id] = [0]
 
-                # 2. Modulo Arithmetic to ensure safety
-                max_phases = self.phase_counts[tls_id]
-                safe_phase = int(phase_index) % max_phases
+                # Map AI Action to Valid Green
+                valid_greens = self.green_phases[tls_id]
+                action_idx = int(action_idx)
+                if action_idx >= len(valid_greens):
+                    action_idx = len(valid_greens) - 1
                 
-                # 3. Send Command
+                target_phase = valid_greens[action_idx]
+                
+                # Logic for Transition
                 current_phase = traci.trafficlight.getPhase(tls_id)
-                if current_phase != safe_phase:
-                    traci.trafficlight.setPhase(tls_id, safe_phase)
-                    
+                if current_phase == target_phase: continue
+                if tls_id in self.pending_switches:
+                    self.pending_switches[tls_id] = target_phase
+                    continue
+
+                yellow_phase = self._get_yellow_phase(tls_id, current_phase)
+                
+                # If we are already in yellow (or transition is impossible), force target
+                if yellow_phase == current_phase:
+                    # Just schedule it instantly
+                    self.pending_switches[tls_id] = target_phase
+                    self.yellow_timers[tls_id] = 1 
+                else:
+                    # Switch to Yellow
+                    traci.trafficlight.setPhase(tls_id, yellow_phase)
+                    self.pending_switches[tls_id] = target_phase
+                    self.yellow_timers[tls_id] = self.YELLOW_DURATION
+
             except Exception as e:
-                # Log the error and continue
                 pass
 
     def step(self):
+        completed_transitions = []
+        for tls_id in list(self.yellow_timers.keys()):
+            self.yellow_timers[tls_id] -= 1
+            if self.yellow_timers[tls_id] <= 0:
+                if tls_id in self.pending_switches:
+                    final_phase = self.pending_switches[tls_id]
+                    try: traci.trafficlight.setPhase(tls_id, final_phase)
+                    except: pass
+                    del self.pending_switches[tls_id]
+                completed_transitions.append(tls_id)
+        
+        for tls_id in completed_transitions: del self.yellow_timers[tls_id]
         traci.simulationStep()
 
     def close(self):
