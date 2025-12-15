@@ -76,7 +76,12 @@ def train_marl():
     history_queues = []
     history_losses = []
     
-    # 3. Training Loop (Episodes)
+    ACTION_INTERVAL = 15
+    
+    # Dynamic Baseline Variables
+    running_reward_mean = 0.0
+    running_reward_std = 1.0
+    
     for episode in range(1, EPISODES + 1):
         manager.start()
         hidden_state = None
@@ -84,62 +89,109 @@ def train_marl():
         ep_reward = 0
         ep_loss = 0
         ep_queue_sum = 0
+        interval_reward = 0 
+        
+        # Reset baseline slightly each episode to adapt to new traffic flows
+        running_reward_mean = running_reward_mean * 0.9 
         
         print(f"\n Episode {episode}/{EPISODES} (Epsilon: {epsilon:.2f})")
         
         for t in tqdm(range(STEPS_PER_EPISODE)):
-            # A. Get State
-            snapshot = manager.get_snapshot()
-            data = graph_builder.create_hetero_data(snapshot)
-            
-            # Track Queue
-            step_queue = sum([l['queue_length'] for l in snapshot['lanes'].values()])
-            ep_queue_sum += step_queue
-            
-            # B. Forward Pass
-            action_logits, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
-            
-            # C. Select Action
-            actions_indices = select_action(action_logits, epsilon)
-            
-            # Map indices to IDs for SUMO
-            idx_to_id = {v: k for k, v in graph_builder.tls_map.items()}
-            actions_dict = {idx_to_id[idx]: val.item() for idx, val in enumerate(actions_indices) if idx in idx_to_id}
-            
-            # D. Execute Action
-            manager.apply_actions(actions_dict)
+
+            # A. DECISION (Every 15s)
+            if t % ACTION_INTERVAL == 0:
+                # 1. Get State
+                snapshot = manager.get_snapshot()
+                data = graph_builder.create_hetero_data(snapshot)
+                
+                # 2. Forward Pass
+                action_logits, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
+                
+                # 3. Select Action
+                actions_indices = select_action(action_logits, epsilon)
+                
+                # 4. Apply Action WITH MAPPING
+                idx_to_id = {v: k for k, v in graph_builder.tls_map.items()}
+                actions_dict = {}
+                
+                for idx, val in enumerate(actions_indices):
+                    if idx in idx_to_id:
+                        model_action = val.item()
+                        tls_id = idx_to_id[idx]
+                        
+                        # 3: THE YELLOW TRAP FIX
+                        # Map Model Action -> SUMO Phase
+                        # 0 -> 0 (Green A)
+                        # 1 -> 2 (Green B)  <-- SKIPS YELLOW (Phase 1)
+                        # 2 -> 0 (Fallback)
+                        
+                        sumo_phase = 0
+                        if model_action == 0: sumo_phase = 0
+                        elif model_action == 1: sumo_phase = 2 
+                        else: sumo_phase = 0
+                        
+                        actions_dict[tls_id] = sumo_phase
+
+                manager.apply_actions(actions_dict)
+
+                # B. TRAINING (On Previous Interval)
+                if t > 0:
+                    probs = F.softmax(action_logits, dim=1)
+                    log_probs = torch.log(probs.gather(1, actions_indices.view(-1, 1)))
+                    
+                    # 4: Normalize Advantage
+                    # This centers the reward around 0. 
+                    # Even if reward is -500, if average is -600, this is GOOD (+1.0 advantage)
+                    advantage = interval_reward
+                    
+                    running_reward_mean = 0.95 * running_reward_mean + 0.05 * advantage
+                    running_reward_std = 0.95 * running_reward_std + 0.05 * abs(advantage - running_reward_mean)
+                    
+                    # (Value - Mean) / Std
+                    scaled_advantage = (advantage - running_reward_mean) / (running_reward_std + 1e-8)
+                    
+                    # Clip to prevent massive gradient spikes
+                    scaled_advantage = torch.clamp(torch.tensor(scaled_advantage), -2.0, 2.0).to(action_logits.device)
+                    
+                    # ADD ENTROPY REGULARIZATION
+                    # 1. Calculate Entropy (Measure of uncertainty)
+                    entropy = - (probs * torch.log(probs + 1e-9)).sum(dim=1).mean()
+                    
+                    # 2. Define Coefficient (Strength of exploration force)
+                    entropy_coef = 0.05
+                    
+                    # 3. Update Loss Formula
+                    # We subtract entropy because we want to MAXIMIZE it (minimize negative entropy)
+                    loss = (-log_probs.mean() * scaled_advantage) - (entropy_coef * entropy)
+                    
+                    optimizer.zero_grad()
+                    loss.backward()
+                    # Clip gradients to prevent instability
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                    optimizer.step()
+                    
+                    # Detach memory
+                    hidden_state = hidden_state.detach()
+                    ep_loss += loss.item()
+                    
+                    interval_reward = 0
+
+            # C. SIMULATION STEP
             manager.step()
             
-            # E. Calculate Reward
-            # Get NEW snapshot to see effect of action
-            next_snapshot = manager.get_snapshot()
-            reward = calculate_reward(next_snapshot)
-            ep_reward += reward
-            
-            # F. Learning Step
-            # Get probability of the action we took
-            probs = F.softmax(action_logits, dim=1)
-            log_probs = torch.log(probs.gather(1, actions_indices.view(-1, 1)))
-            
-            # Loss = - (LogProb * Reward)
-            scaled_reward = reward / 100.0 
-            loss = -log_probs.mean() * scaled_reward
-            
-            optimizer.zero_grad()
-            loss.backward()
-            # Clip gradients to prevent instability
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimizer.step()
-            
-            # Detach memory
-            hidden_state = hidden_state.detach()
-            ep_loss += loss.item()
+            # D. DATA COLLECTION 
+            if t > 0:
+                current_snap = manager.get_snapshot()
+                r_step = calculate_reward(current_snap)
+                interval_reward += r_step
+                ep_reward += r_step
+                ep_queue_sum += sum([l['queue_length'] for l in current_snap['lanes'].values()])
 
         manager.close()
         
-        # Update History
+        # Update History & Logging
         epsilon = max(EPSILON_END, epsilon * EPSILON_DECAY)
-        avg_loss = ep_loss / STEPS_PER_EPISODE
+        avg_loss = ep_loss / (STEPS_PER_EPISODE / ACTION_INTERVAL)
         avg_queue = ep_queue_sum / STEPS_PER_EPISODE
         
         history_rewards.append(ep_reward)
