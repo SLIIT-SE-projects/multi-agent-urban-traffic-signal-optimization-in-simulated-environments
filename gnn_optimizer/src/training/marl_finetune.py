@@ -233,25 +233,46 @@ def evaluate_model(model, graph_builder, episode_num):
     model.eval()
     hidden_state = None
     
+    # Define Interval
+    ACTION_INTERVAL = 15 
+    
     try:
         # Run a full simulation episode
         for t in range(STEPS_PER_EPISODE):
-            snapshot = eval_manager.get_snapshot()
-            data = graph_builder.create_hetero_data(snapshot)
             
-            with torch.no_grad():
-                # Inference
-                action_logits, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
+            # Only Act Every 15 Seconds
+            if t % ACTION_INTERVAL == 0:
+                snapshot = eval_manager.get_snapshot()
+                data = graph_builder.create_hetero_data(snapshot)
                 
-                # STRICTLY GREEDY Action
-                actions_indices = torch.argmax(action_logits, dim=1)
-                
-                # Convert to Dict
-                idx_to_id = {v: k for k, v in graph_builder.tls_map.items()}
-                actions_dict = {idx_to_id[idx]: val.item() for idx, val in enumerate(actions_indices) if idx in idx_to_id}
-                
-            # Act & Step
-            eval_manager.apply_actions(actions_dict)
+                with torch.no_grad():
+                    # Inference
+                    action_logits, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
+                    
+                    # STRICTLY GREEDY Action
+                    actions_indices = torch.argmax(action_logits, dim=1)
+                    
+                    # Convert to Dict
+                    idx_to_id = {v: k for k, v in graph_builder.tls_map.items()}
+                    actions_dict = {}
+                    
+                    for idx, val in enumerate(actions_indices):
+                        if idx in idx_to_id:
+                            model_action = val.item()
+                            tls_id = idx_to_id[idx]
+                            
+                            # Apply the same Phase Mapping as Training
+                            sumo_phase = 0
+                            if model_action == 0: sumo_phase = 0
+                            elif model_action == 1: sumo_phase = 2 
+                            else: sumo_phase = 0
+                            
+                            actions_dict[tls_id] = sumo_phase
+                    
+                # Act
+                eval_manager.apply_actions(actions_dict)
+            
+            # Step Simulation
             eval_manager.step()
             
             # Measure Performance (Testing Metric)
@@ -266,6 +287,8 @@ def evaluate_model(model, graph_builder, episode_num):
             
     except Exception as e:
         print(f" Evaluation Failed: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         eval_manager.close()
         model.train() 
