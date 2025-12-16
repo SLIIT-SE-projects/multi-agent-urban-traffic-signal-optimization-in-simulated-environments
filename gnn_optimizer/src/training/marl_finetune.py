@@ -60,7 +60,6 @@ def train_marl():
     
     # 2. Load Pre-Trained Model (The "Warm Start")
     print(f" Loading Pre-trained weights from {PRETRAINED_PATH}...")
-    # FIX 1: Force out_channels=3 (0,1,2)
     model = RecurrentHGAT(
         hidden_channels=TrainConfig.HIDDEN_DIM, 
         out_channels=GraphConfig.NUM_SIGNAL_PHASES, 
@@ -73,10 +72,6 @@ def train_marl():
     #     print(" Weights loaded.")
     # except:
     #     print(" Pre-trained weights not found. Training from scratch.")
-
-    ## if have pretrained marl model, load it
-
-    # ... inside train_marl() ...
 
     # 1. Try to load existing MARL model (Continue Training)
     if os.path.exists(FINAL_MODEL_PATH):
