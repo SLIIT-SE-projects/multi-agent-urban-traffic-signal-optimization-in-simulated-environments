@@ -136,3 +136,6 @@ class SumoManager:
     def close(self):
         traci.close()
         print(" SUMO Simulation Closed.")
+
+    def get_controlled_lanes(self, tls_id):
+        return list(set(traci.trafficlight.getControlledLanes(tls_id)))
