@@ -71,7 +71,7 @@ class RealTimeInferenceEngine:
                     data = self.graph_builder.create_hetero_data(snapshot)
                     
                     with torch.no_grad():
-                        action_logits, self.hidden_state = self.model(
+                        action_logits, _, self.hidden_state = self.model(
                             data.x_dict, 
                             data.edge_index_dict, 
                             self.hidden_state
@@ -102,7 +102,7 @@ class RealTimeInferenceEngine:
                         total_queue = sum([l['queue_length'] for l in snapshot['lanes'].values()])
                         print(f"Step {t}: 🚦 Optimization Active. Net Queue: {total_queue:.1f} veh")
 
-                # step
+                # SIMULATION STEP
                 self.manager.step()
                 
                 if self.hidden_state is not None:
