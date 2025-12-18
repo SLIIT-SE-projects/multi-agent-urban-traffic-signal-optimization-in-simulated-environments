@@ -4,9 +4,16 @@ class TrafficPolicyHead(nn.Module):
     
     def __init__(self, input_dim, output_dim):
         super().__init__()
-        # A simple linear layer to start, after MARL add more layers here for 'Actor-Critic'.
-        self.actor_linear = nn.Linear(input_dim, output_dim)
+        
+        # 1. ACTOR: Estimates which action to take
+        self.actor = nn.Linear(input_dim, output_dim)
+        
+        # 2. CRITIC: Estimates the value of the state
+        self.critic = nn.Linear(input_dim, 1)
 
     def forward(self, x):
-        # Returns raw scores (logits).
-        return self.actor_linear(x)
+        
+        action_logits = self.actor(x)
+        state_value = self.critic(x)
+        
+        return action_logits, state_value
