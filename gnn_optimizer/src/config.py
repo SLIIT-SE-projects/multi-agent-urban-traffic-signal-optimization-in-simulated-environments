@@ -71,5 +71,6 @@ class FileConfig:
     MODELS_DIR = os.path.join(EXPERIMENTS_FOLDER, "saved_models")
     PRETRAINED_MODEL_PATH = os.path.join(MODELS_DIR, "pretrained_gnn.pth")
     FINAL_MARL_MODEL_PATH = os.path.join(MODELS_DIR, "final_marl_model.pth")
+    FINAL_MARL_OLD_MODEL_PATH = os.path.join(MODELS_DIR, "reinforce_model.pth")
 
     PLOTS_DIR = os.path.join(EXPERIMENTS_FOLDER, "plots")

@@ -22,7 +22,7 @@ from src.utils.evaluator import Evaluator
 SUMO_CONFIG = SimConfig.SUMO_CFG
 SUMO_NET = SimConfig.NET_FILE
 PRETRAINED_PATH = FileConfig.PRETRAINED_MODEL_PATH
-FINAL_MODEL_PATH = FileConfig.FINAL_MARL_MODEL_PATH
+FINAL_MODEL_PATH = FileConfig.FINAL_MARL_OLD_MODEL_PATH
 PLOT_SAVE_DIR = FileConfig.PLOTS_DIR
 
 # Training Hyperparameters
