@@ -16,7 +16,7 @@ from src.config import FileConfig, TrainConfig, SimConfig, GraphConfig, ModelCon
 from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
 from src.models.hgat_core import RecurrentHGAT
-from src.training.reward_function import calculate_reward
+from src.training.reward_function_actor_critic import calculate_reward
 from src.utils.evaluator import Evaluator
 
 # CONFIGURATION 
