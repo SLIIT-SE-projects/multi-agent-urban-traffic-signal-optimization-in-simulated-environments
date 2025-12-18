@@ -20,56 +20,53 @@ os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 os.makedirs(SCALER_DIR, exist_ok=True)
 
 def load_data():
-    """Loads all CSV files from the raw data directory."""
+    """Loads all CSV files."""
     all_files = glob.glob(os.path.join(RAW_DATA_DIR, "eta_data_*.csv"))
-    
     if not all_files:
         print(f"ERROR: No data found in {RAW_DATA_DIR}")
         return None
     
-    print(f"Found {len(all_files)} raw data files.")
-    
     df_list = []
     for i, filename in enumerate(all_files):
         df = pd.read_csv(filename)
-        # Give each file a unique run_id so we don't mix them up
-        df['run_id'] = i  
+        # Ensure 'ev_id' exists, if not (old data), assume 'EV_1'
+        if 'ev_id' not in df.columns:
+            df['ev_id'] = f"run_{i}_EV_1"
+        else:
+            # Make ev_id unique per file to avoid collision
+            df['ev_id'] = df['ev_id'].astype(str) + f"_file_{i}"
         df_list.append(df)
     
     return pd.concat(df_list, ignore_index=True)
 
 def calculate_actual_eta(df):
     """
-    Calculates the 'Target' variable.
-    Logic: Find the last step of the run (arrival). ETA = Arrival_Time - Current_Time.
+    Calculates Target ETA.
+    Logic: Group by EV ID. Find arrival step (max step) for THAT vehicle.
     """
-    processed_runs = []
+    processed_evs = []
     
-    # Process each simulation run separately
-    for run_id, group in df.groupby('run_id'):
+    for ev_id, group in df.groupby('ev_id'):
         group = group.copy()
+        group = group.sort_values('step')
         
-        # We assume the last step in the log is the arrival at the intersection
+        # Assume last seen step is arrival
         arrival_step = group['step'].max()
-        
-        # Calculate ETA
         group['actual_eta'] = arrival_step - group['step']
         
-        processed_runs.append(group)
+        processed_evs.append(group)
         
-    return pd.concat(processed_runs, ignore_index=True)
+    return pd.concat(processed_evs, ignore_index=True)
 
 def create_sequences(data, feature_cols, target_col, seq_length):
     """
-    Converts tabular data into 3D sequences for LSTM: (Samples, TimeSteps, Features)
-    [cite: 277]
+    Converts to LSTM sequences, grouped strictly by ev_id.
     """
     sequences = []
     targets = []
     
-    # Group by run_id again to ensure we don't create a sequence that jumps 
-    # from the end of Run 1 to the start of Run 2
-    for _, group in data.groupby('run_id'):
+    # GROUP BY EV_ID
+    for _, group in data.groupby('ev_id'):
         group_vals = group[feature_cols].values
         target_vals = group[target_col].values
         
@@ -77,60 +74,49 @@ def create_sequences(data, feature_cols, target_col, seq_length):
             continue
             
         for i in range(len(group) - seq_length):
-            # Input: The sequence of features (e.g., t=0 to t=9)
             seq = group_vals[i : i + seq_length]
             sequences.append(seq)
             
-            # Target: The ETA at the last step of the sequence (e.g., ETA at t=9)
-            # We want the model to predict the ETA at the current moment
+            # Target is the ETA at the current moment (end of sequence)
             label = target_vals[i + seq_length - 1] 
             targets.append(label)
             
     return np.array(sequences), np.array(targets)
 
 def main():
-    print("--- STARTING PREPROCESSING ---")
+    print("--- STARTING MULTI-EV PREPROCESSING ---")
     
-    # 1. Load Data
+    # 1. Load
     df = load_data()
     if df is None: return
 
-    # 2. Calculate Targets
-    print("Calculating Actual ETA targets...")
+    # 2. Targets
+    print(f"Calculating targets for {df['ev_id'].nunique()} unique EVs...")
     df = calculate_actual_eta(df)
     
-    # 3. Normalize Features
+    # 3. Normalize
     print("Normalizing features...")
-    feature_cols = [
-        'speed', 
-        'acceleration', 
-        'distance_to_signal',
-        'queue_length', 
-        'leader_gap', 
-        'leader_speed'
-    ]
+    feature_cols = ['speed', 'acceleration', 'distance_to_signal', 
+                    'queue_length', 'leader_gap', 'leader_speed']
     target_col = 'actual_eta'
     
     scaler = MinMaxScaler(feature_range=(0, 1))
     df[feature_cols] = scaler.fit_transform(df[feature_cols])
     
-    # SAVE THE SCALER
-    scaler_path = os.path.join(SCALER_DIR, "eta_scaler.pkl")
-    with open(scaler_path, "wb") as f:
+    with open(os.path.join(SCALER_DIR, "eta_scaler.pkl"), "wb") as f:
         pickle.dump(scaler, f)
-    print(f"Scaler saved to {scaler_path}")
 
-    # 4. Create Sequences
+    # 4. Sequences
     print("Creating LSTM sequences...")
     X, y = create_sequences(df, feature_cols, target_col, SEQUENCE_LENGTH)
     
     print(f"Final Dataset Shape: X={X.shape}, y={y.shape}")
     
     if len(X) == 0:
-        print("Error: Not enough data. Try running the simulation longer.")
+        print("Error: Not enough data.")
         return
 
-    # 5. Split and Save
+    # 5. Save
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE, random_state=42)
     
     np.save(os.path.join(PROCESSED_DATA_DIR, "X_train.npy"), X_train)
@@ -138,7 +124,7 @@ def main():
     np.save(os.path.join(PROCESSED_DATA_DIR, "X_test.npy"), X_test)
     np.save(os.path.join(PROCESSED_DATA_DIR, "y_test.npy"), y_test)
     
-    print("SUCCESS: Preprocessing complete. Data ready for training.")
+    print("SUCCESS: Data ready.")
 
 if __name__ == "__main__":
     main()
