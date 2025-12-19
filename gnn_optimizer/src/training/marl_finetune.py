@@ -22,7 +22,7 @@ from src.utils.evaluator import Evaluator
 SUMO_CONFIG = SimConfig.SUMO_CFG
 SUMO_NET = SimConfig.NET_FILE
 PRETRAINED_PATH = FileConfig.PRETRAINED_MODEL_PATH
-FINAL_MODEL_PATH = FileConfig.FINAL_MARL_MODEL_PATH
+FINAL_MODEL_PATH = FileConfig.FINAL_MARL_OLD_MODEL_PATH
 PLOT_SAVE_DIR = FileConfig.PLOTS_DIR
 
 # Training Hyperparameters
@@ -134,7 +134,7 @@ def train_marl():
                 data = graph_builder.create_hetero_data(snapshot)
                 
                 # 2. Forward Pass
-                action_logits, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
+                action_logits, _, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
                 
                 # 3. Select Action
                 actions_indices = select_action(action_logits, epsilon)
@@ -276,7 +276,7 @@ def evaluate_model(model, graph_builder, episode_num):
                 
                 with torch.no_grad():
                     # Inference
-                    action_logits, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
+                    action_logits,_, hidden_state = model(data.x_dict, data.edge_index_dict, hidden_state)
                     
                     # STRICTLY GREEDY Action
                     actions_indices = torch.argmax(action_logits, dim=1)

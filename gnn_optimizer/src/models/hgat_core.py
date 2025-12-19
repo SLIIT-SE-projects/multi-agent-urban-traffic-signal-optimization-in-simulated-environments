@@ -36,7 +36,7 @@ class RecurrentHGAT(nn.Module):
         # 4. Uncertainty Module (The New Class)
         self.mc_dropout = BayesianDropout(p=ModelConfig.DROPOUT_RATE)
 
-        # 5. Decision Head (The New Class)
+        # 5. Actor-Critic Head
         self.policy_head = TrafficPolicyHead(hidden_channels, out_channels)
 
     def forward(self, x_dict, edge_index_dict, hidden_state=None):
@@ -60,7 +60,7 @@ class RecurrentHGAT(nn.Module):
         # Update memory
         new_hidden_state = self.gru(intersection_embeddings, hidden_state)
         
-        # 4. Decision Making
-        action_logits = self.policy_head(new_hidden_state)
+        # 4. Decision Making (Actor & Critic)
+        action_logits, state_value = self.policy_head(new_hidden_state)
         
-        return action_logits, new_hidden_state
+        return action_logits, state_value, new_hidden_state
