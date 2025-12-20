@@ -3,6 +3,7 @@
     <input>
         <net-file value="grid_3x3.net.xml"/>
         <route-files value="grid_3x3.rou.xml"/>
+        <additional-files value="grid_3x3.add.xml"/>
     </input>
     <time>
         <begin value="0"/>
