@@ -37,6 +37,11 @@ PPO_EPOCHS = TrainConfig.PPO_EPOCHS
 ENTROPY_COEF = TrainConfig.ENTROPY_COEF 
 VALUE_LOSS_COEF = TrainConfig.VALUE_LOSS_COEF
 
+ROUTE_EASY = "simulation/routes_easy.xml"
+ROUTE_MEDIUM = "simulation/routes_medium.xml"
+ROUTE_HARD = "simulation/routes_hard.xml"
+ACTIVE_ROUTE = "simulation/routes.rou.xml" # The file specified in scenario.sumocfg
+
 
 class RolloutBuffer:
     def __init__(self):
@@ -173,6 +178,16 @@ def train_marl():
     MIN_GREEN_TIME = 20 # Minimum seconds to hold a green light
     
     for episode in range(1, EPISODES + 1):
+
+         # Switch Logic
+        if episode <= 20: source = ROUTE_EASY
+        elif episode <= 50: source = ROUTE_MEDIUM
+        else: source = ROUTE_HARD
+
+        # Copy file
+        import shutil
+        shutil.copy(source, ACTIVE_ROUTE)
+
         manager.start()
         hidden_state = None 
         
