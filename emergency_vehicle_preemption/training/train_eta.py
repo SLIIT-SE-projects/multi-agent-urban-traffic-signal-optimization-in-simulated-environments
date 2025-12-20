@@ -1,9 +1,10 @@
 import os
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
-from tensorflow.keras.callbacks import EarlyStopping
+
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout, Bidirectional
+from keras.callbacks import EarlyStopping
 
 # --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
