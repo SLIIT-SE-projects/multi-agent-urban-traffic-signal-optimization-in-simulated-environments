@@ -38,9 +38,9 @@ saved_states/
 # Model files
 *.pt
 *.pth
-*.pkl
+# *.pkl
 *.ckpt
-*.h5
+# *.h5
 *.joblib
 *.onnx
 
@@ -54,25 +54,7 @@ emergency_vehicle_preemption/data/processed/
 emergency_vehicle_preemption/**/*.csv
 emergency_vehicle_preemption/**/*.npy
 
-# Scalers / transforms
-emergency_vehicle_preemption/data/scalers/
-emergency_vehicle_preemption/**/*.pkl
 
-# Trained models / artifacts
-emergency_vehicle_preemption/models_saved/
-emergency_vehicle_preemption/**/models_saved/
-emergency_vehicle_preemption/**/*.h5
-
-# models
-emergency_vehicle_preemption/models/
-emergency_vehicle_preemption/**/models/
-
-# evps core simulation configs/networks/routes
-/emergency_vehicle_preemption/simulation
-!emergency_vehicle_preemption/simulation/config/**/*.sumocfg
-!emergency_vehicle_preemption/simulation/networks/**/*.net.xml
-!emergency_vehicle_preemption/simulation/routes/**/*.rou.xml
-!emergency_vehicle_preemption/simulation/routes/**/*.trips.xml
 
 # ---------------------------
 # SUMO Specific
@@ -80,7 +62,7 @@ emergency_vehicle_preemption/**/models/
 *.dump
 *.xml.gz
 *.sumocfg.save
-*.rou.alt.xml
+# *.rou.alt.xml
 *.synchro.xml
 *.stop.xml
 *.traci.xml

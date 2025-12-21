@@ -1,0 +1,156 @@
+<routes>
+    <vType id="car" accel="2.6" decel="4.5" length="5" maxSpeed="15" guiShape="passenger"/>
+    <vType id="ambulance" vClass="emergency" accel="4.5" decel="6.0" length="6" maxSpeed="30" guiShape="emergency" speedFactor="1.5">
+        <param key="has.bluelight.device" value="true"/>
+    </vType>
+    <flow id="flow_53" type="car" begin="0" end="600" number="12" from="A1B1" to="C2C3" />
+    <flow id="flow_55" type="car" begin="33" end="633" number="12" from="D2C2" to="C0C1" />
+    <trip id="EV_0" type="ambulance" depart="50" from="C1B1" to="B1B2" />
+    <trip id="EV_1" type="ambulance" depart="120" from="B2C2" to="A2B2" />
+    <flow id="flow_4" type="car" begin="123" end="723" number="13" from="D2D3" to="C2D2" />
+    <flow id="flow_72" type="car" begin="184" end="784" number="12" from="B1B2" to="A1A0" />
+    <trip id="EV_2" type="ambulance" depart="190" from="C1C0" to="A2A3" />
+    <flow id="flow_71" type="car" begin="197" end="797" number="11" from="C1C2" to="A2A3" />
+    <trip id="EV_3" type="ambulance" depart="260" from="A1A0" to="C3C2" />
+    <flow id="flow_91" type="car" begin="264" end="864" number="15" from="B1A1" to="D2D1" />
+    <flow id="flow_56" type="car" begin="282" end="882" number="6" from="B1B2" to="C0D0" />
+    <flow id="flow_16" type="car" begin="287" end="887" number="10" from="D1D2" to="A2A1" />
+    <flow id="flow_47" type="car" begin="305" end="905" number="15" from="A2A1" to="D3D2" />
+    <flow id="flow_30" type="car" begin="311" end="911" number="7" from="C3D3" to="C3B3" />
+    <flow id="flow_1" type="car" begin="320" end="920" number="15" from="B1B0" to="B3B2" />
+    <trip id="EV_4" type="ambulance" depart="330" from="A1A2" to="B3C3" />
+    <flow id="flow_26" type="car" begin="359" end="959" number="15" from="D0C0" to="C3B3" />
+    <flow id="flow_36" type="car" begin="380" end="980" number="14" from="C3D3" to="A0A1" />
+    <trip id="EV_5" type="ambulance" depart="400" from="C2D2" to="B2A2" />
+    <flow id="flow_2" type="car" begin="447" end="1047" number="13" from="C2C3" to="A0A1" />
+    <trip id="EV_6" type="ambulance" depart="470" from="D3D2" to="D0C0" />
+    <flow id="flow_77" type="car" begin="531" end="1131" number="14" from="B1C1" to="A3B3" />
+    <trip id="EV_7" type="ambulance" depart="540" from="A0A1" to="B3A3" />
+    <flow id="flow_25" type="car" begin="574" end="1174" number="11" from="B0A0" to="D2C2" />
+    <flow id="flow_50" type="car" begin="601" end="1201" number="12" from="B2C2" to="C3D3" />
+    <trip id="EV_8" type="ambulance" depart="610" from="C1C0" to="B3C3" />
+    <flow id="flow_12" type="car" begin="612" end="1212" number="9" from="B0B1" to="A1A0" />
+    <flow id="flow_14" type="car" begin="629" end="1229" number="8" from="C2C3" to="C0C1" />
+    <flow id="flow_57" type="car" begin="637" end="1237" number="12" from="A1A2" to="D2D3" />
+    <flow id="flow_74" type="car" begin="649" end="1249" number="11" from="C2C3" to="C0B0" />
+    <trip id="EV_9" type="ambulance" depart="680" from="D3D2" to="C2D2" />
+    <flow id="flow_61" type="car" begin="703" end="1303" number="7" from="B3A3" to="B0A0" />
+    <flow id="flow_92" type="car" begin="711" end="1311" number="5" from="B3A3" to="A1A2" />
+    <flow id="flow_41" type="car" begin="721" end="1321" number="10" from="A3B3" to="B2B3" />
+    <flow id="flow_51" type="car" begin="731" end="1331" number="8" from="A2A1" to="B2B1" />
+    <trip id="EV_10" type="ambulance" depart="750" from="B1A1" to="D3D2" />
+    <flow id="flow_43" type="car" begin="766" end="1366" number="12" from="D2D1" to="A2A1" />
+    <flow id="flow_82" type="car" begin="811" end="1411" number="13" from="B0C0" to="C3B3" />
+    <trip id="EV_11" type="ambulance" depart="820" from="D1D2" to="C3C2" />
+    <flow id="flow_6" type="car" begin="862" end="1462" number="10" from="A0A1" to="B0A0" />
+    <trip id="EV_12" type="ambulance" depart="890" from="B1B2" to="C3B3" />
+    <flow id="flow_81" type="car" begin="903" end="1503" number="10" from="D1C1" to="A2B2" />
+    <flow id="flow_0" type="car" begin="944" end="1544" number="8" from="D1D2" to="B1C1" />
+    <flow id="flow_58" type="car" begin="952" end="1552" number="12" from="C2C1" to="A0B0" />
+    <flow id="flow_11" type="car" begin="953" end="1553" number="6" from="B1B0" to="D2C2" />
+    <trip id="EV_13" type="ambulance" depart="960" from="C3C2" to="A2B2" />
+    <flow id="flow_73" type="car" begin="969" end="1569" number="12" from="D3C3" to="B3B2" />
+    <flow id="flow_38" type="car" begin="1008" end="1608" number="11" from="B1C1" to="A1B1" />
+    <trip id="EV_14" type="ambulance" depart="1030" from="A2A1" to="A1B1" />
+    <flow id="flow_96" type="car" begin="1052" end="1652" number="10" from="C2C3" to="B1B2" />
+    <trip id="EV_15" type="ambulance" depart="1100" from="A2A1" to="C2C1" />
+    <flow id="flow_22" type="car" begin="1147" end="1747" number="8" from="B1C1" to="C2B2" />
+    <flow id="flow_75" type="car" begin="1168" end="1768" number="9" from="B2C2" to="D0C0" />
+    <trip id="EV_16" type="ambulance" depart="1170" from="C1C2" to="C1C0" />
+    <flow id="flow_20" type="car" begin="1217" end="1817" number="8" from="D2C2" to="A0B0" />
+    <trip id="EV_17" type="ambulance" depart="1240" from="C2C3" to="A3A2" />
+    <trip id="EV_18" type="ambulance" depart="1310" from="A2A1" to="B2B1" />
+    <flow id="flow_37" type="car" begin="1364" end="1964" number="12" from="B2C2" to="D3C3" />
+    <trip id="EV_19" type="ambulance" depart="1380" from="A3B3" to="D3D2" />
+    <trip id="EV_20" type="ambulance" depart="1450" from="D1D2" to="B3B2" />
+    <trip id="EV_21" type="ambulance" depart="1520" from="D2D1" to="A3B3" />
+    <flow id="flow_46" type="car" begin="1536" end="2136" number="13" from="A3B3" to="C1C0" />
+    <flow id="flow_83" type="car" begin="1547" end="2147" number="6" from="A1B1" to="B1B0" />
+    <flow id="flow_88" type="car" begin="1553" end="2153" number="12" from="A1A2" to="B1A1" />
+    <trip id="EV_22" type="ambulance" depart="1590" from="D0C0" to="C3D3" />
+    <flow id="flow_5" type="car" begin="1596" end="2196" number="11" from="C1D1" to="C1B1" />
+    <flow id="flow_29" type="car" begin="1626" end="2226" number="8" from="B2C2" to="A0B0" />
+    <flow id="flow_85" type="car" begin="1631" end="2231" number="12" from="B1C1" to="B3B2" />
+    <flow id="flow_68" type="car" begin="1634" end="2234" number="13" from="C1D1" to="C2B2" />
+    <flow id="flow_9" type="car" begin="1648" end="2248" number="10" from="D3C3" to="A2A1" />
+    <trip id="EV_23" type="ambulance" depart="1660" from="C1C2" to="B3B2" />
+    <flow id="flow_34" type="car" begin="1715" end="2315" number="11" from="B0C0" to="A1A2" />
+    <trip id="EV_24" type="ambulance" depart="1730" from="A1B1" to="A2A3" />
+    <flow id="flow_32" type="car" begin="1782" end="2382" number="11" from="D0C0" to="B2A2" />
+    <trip id="EV_25" type="ambulance" depart="1800" from="C3D3" to="D0D1" />
+    <flow id="flow_95" type="car" begin="1847" end="2447" number="14" from="A2A1" to="B0A0" />
+    <flow id="flow_98" type="car" begin="1853" end="2453" number="10" from="B2A2" to="A1A2" />
+    <flow id="flow_31" type="car" begin="1867" end="2467" number="8" from="C0D0" to="D1C1" />
+    <trip id="EV_26" type="ambulance" depart="1870" from="A2B2" to="A3B3" />
+    <trip id="EV_27" type="ambulance" depart="1940" from="C1B1" to="C3B3" />
+    <flow id="flow_48" type="car" begin="1965" end="2565" number="6" from="D0D1" to="B2B3" />
+    <flow id="flow_67" type="car" begin="1976" end="2576" number="7" from="C2C3" to="C2D2" />
+    <trip id="EV_28" type="ambulance" depart="2010" from="C2D2" to="A1B1" />
+    <flow id="flow_19" type="car" begin="2022" end="2622" number="5" from="A0A1" to="C1C0" />
+    <flow id="flow_17" type="car" begin="2040" end="2640" number="13" from="A1A2" to="B0B1" />
+    <trip id="EV_29" type="ambulance" depart="2080" from="B1A1" to="D2D1" />
+    <flow id="flow_42" type="car" begin="2084" end="2684" number="10" from="B3C3" to="D1C1" />
+    <flow id="flow_80" type="car" begin="2106" end="2706" number="14" from="D0C0" to="C3C2" />
+    <flow id="flow_15" type="car" begin="2115" end="2715" number="6" from="C1C2" to="D0D1" />
+    <trip id="EV_30" type="ambulance" depart="2150" from="A3A2" to="D0D1" />
+    <flow id="flow_63" type="car" begin="2154" end="2754" number="13" from="D2C2" to="C3C2" />
+    <flow id="flow_40" type="car" begin="2165" end="2765" number="12" from="C0C1" to="A3B3" />
+    <trip id="EV_31" type="ambulance" depart="2220" from="C1C2" to="B0A0" />
+    <flow id="flow_79" type="car" begin="2223" end="2823" number="10" from="A3B3" to="C1C2" />
+    <flow id="flow_24" type="car" begin="2234" end="2834" number="15" from="C0B0" to="C3B3" />
+    <flow id="flow_27" type="car" begin="2238" end="2838" number="5" from="D3D2" to="C3B3" />
+    <flow id="flow_84" type="car" begin="2249" end="2849" number="5" from="C0B0" to="D2D1" />
+    <flow id="flow_87" type="car" begin="2254" end="2854" number="8" from="B0A0" to="A2A3" />
+    <trip id="EV_32" type="ambulance" depart="2290" from="C3B3" to="B2A2" />
+    <flow id="flow_64" type="car" begin="2301" end="2901" number="13" from="B2B1" to="B2B3" />
+    <flow id="flow_21" type="car" begin="2337" end="2937" number="10" from="B1C1" to="C3C2" />
+    <trip id="EV_33" type="ambulance" depart="2360" from="C1B1" to="C3D3" />
+    <flow id="flow_69" type="car" begin="2391" end="2991" number="12" from="D1D0" to="B2B1" />
+    <flow id="flow_62" type="car" begin="2415" end="3015" number="15" from="C2C3" to="D0C0" />
+    <trip id="EV_34" type="ambulance" depart="2430" from="B2C2" to="B2B3" />
+    <trip id="EV_35" type="ambulance" depart="2500" from="A0A1" to="D3D2" />
+    <trip id="EV_36" type="ambulance" depart="2570" from="C2C1" to="C0B0" />
+    <flow id="flow_49" type="car" begin="2583" end="3183" number="7" from="B0A0" to="C2C1" />
+    <flow id="flow_18" type="car" begin="2612" end="3212" number="7" from="A3B3" to="A1B1" />
+    <trip id="EV_37" type="ambulance" depart="2640" from="B2C2" to="C0D0" />
+    <flow id="flow_44" type="car" begin="2641" end="3241" number="6" from="A1A0" to="B1A1" />
+    <flow id="flow_39" type="car" begin="2703" end="3303" number="11" from="C0C1" to="B2A2" />
+    <trip id="EV_38" type="ambulance" depart="2710" from="C1B1" to="D0C0" />
+    <flow id="flow_66" type="car" begin="2711" end="3311" number="12" from="B2A2" to="B0A0" />
+    <flow id="flow_54" type="car" begin="2723" end="3323" number="9" from="A3B3" to="C1D1" />
+    <flow id="flow_94" type="car" begin="2728" end="3328" number="6" from="D2C2" to="C0D0" />
+    <flow id="flow_45" type="car" begin="2745" end="3345" number="14" from="B0A0" to="B1B0" />
+    <flow id="flow_52" type="car" begin="2745" end="3345" number="5" from="C0D0" to="D2D3" />
+    <trip id="EV_39" type="ambulance" depart="2780" from="A2A3" to="D1D0" />
+    <flow id="flow_97" type="car" begin="2814" end="3414" number="13" from="D1D0" to="C1B1" />
+    <flow id="flow_10" type="car" begin="2847" end="3447" number="10" from="A2A1" to="D2D3" />
+    <trip id="EV_40" type="ambulance" depart="2850" from="A0A1" to="C1C0" />
+    <trip id="EV_41" type="ambulance" depart="2920" from="A1A0" to="D1C1" />
+    <flow id="flow_13" type="car" begin="2942" end="3542" number="8" from="C0C1" to="B0B1" />
+    <flow id="flow_8" type="car" begin="2954" end="3554" number="9" from="A0A1" to="C2C3" />
+    <flow id="flow_35" type="car" begin="2959" end="3559" number="10" from="A1A2" to="C1D1" />
+    <trip id="EV_42" type="ambulance" depart="2990" from="B3A3" to="B2A2" />
+    <flow id="flow_60" type="car" begin="3030" end="3630" number="8" from="B1C1" to="D3C3" />
+    <flow id="flow_86" type="car" begin="3052" end="3652" number="5" from="B1C1" to="A3A2" />
+    <flow id="flow_28" type="car" begin="3058" end="3658" number="12" from="D3D2" to="C1D1" />
+    <trip id="EV_43" type="ambulance" depart="3060" from="C1C0" to="A3B3" />
+    <trip id="EV_44" type="ambulance" depart="3130" from="B0A0" to="A0B0" />
+    <flow id="flow_70" type="car" begin="3168" end="3768" number="11" from="B0B1" to="B0C0" />
+    <flow id="flow_3" type="car" begin="3187" end="3787" number="14" from="D2D1" to="B2A2" />
+    <flow id="flow_33" type="car" begin="3197" end="3797" number="11" from="A2A1" to="D3D2" />
+    <trip id="EV_45" type="ambulance" depart="3200" from="B3C3" to="D2D3" />
+    <flow id="flow_65" type="car" begin="3228" end="3828" number="13" from="B0B1" to="A1A0" />
+    <flow id="flow_99" type="car" begin="3253" end="3853" number="10" from="A0A1" to="B2C2" />
+    <trip id="EV_46" type="ambulance" depart="3270" from="D1C1" to="C1D1" />
+    <flow id="flow_89" type="car" begin="3275" end="3875" number="11" from="C2C1" to="C0D0" />
+    <flow id="flow_76" type="car" begin="3289" end="3889" number="12" from="B1A1" to="C0B0" />
+    <flow id="flow_93" type="car" begin="3321" end="3921" number="8" from="A1A0" to="D2D1" />
+    <flow id="flow_7" type="car" begin="3332" end="3932" number="11" from="C3D3" to="C1B1" />
+    <trip id="EV_47" type="ambulance" depart="3340" from="B2C2" to="B0B1" />
+    <flow id="flow_90" type="car" begin="3343" end="3943" number="13" from="A0B0" to="C2C3" />
+    <flow id="flow_23" type="car" begin="3348" end="3948" number="7" from="B1C1" to="A3A2" />
+    <flow id="flow_78" type="car" begin="3367" end="3967" number="11" from="A1A0" to="B2B1" />
+    <flow id="flow_59" type="car" begin="3396" end="3996" number="11" from="C2C1" to="C3C2" />
+    <trip id="EV_48" type="ambulance" depart="3410" from="C1C2" to="B2C2" />
+    <trip id="EV_49" type="ambulance" depart="3480" from="C0D0" to="B2C2" />
+</routes>
