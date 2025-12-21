@@ -45,33 +45,34 @@ saved_states/
 *.onnx
 
 # ---------------------------
-# COMPONENT: AI-Driven EVPS (emergency_preemption)
+# COMPONENT: AI-Driven EVPS (emergency_vehicle_preemption)
 # ---------------------------
 
 # Raw + processed datasets
-emergency_preemption/data/raw/
-emergency_preemption/data/processed/
-emergency_preemption/**/*.csv
-emergency_preemption/**/*.npy
+emergency_vehicle_preemption/data/raw/
+emergency_vehicle_preemption/data/processed/
+emergency_vehicle_preemption/**/*.csv
+emergency_vehicle_preemption/**/*.npy
 
 # Scalers / transforms
-emergency_preemption/data/scalers/
-emergency_preemption/**/*.pkl
+emergency_vehicle_preemption/data/scalers/
+emergency_vehicle_preemption/**/*.pkl
 
 # Trained models / artifacts
-emergency_preemption/models_saved/
-emergency_preemption/**/models_saved/
-emergency_preemption/**/*.h5
+emergency_vehicle_preemption/models_saved/
+emergency_vehicle_preemption/**/models_saved/
+emergency_vehicle_preemption/**/*.h5
 
 # models
-emergency_preemption/models/
-emergency_preemption/**/models/
+emergency_vehicle_preemption/models/
+emergency_vehicle_preemption/**/models/
 
 # evps core simulation configs/networks/routes
-!emergency_preemption/simulation/config/**/*.sumocfg
-!emergency_preemption/simulation/networks/**/*.net.xml
-!emergency_preemption/simulation/routes/**/*.rou.xml
-!emergency_preemption/simulation/routes/**/*.trips.xml
+/emergency_vehicle_preemption/simulation
+!emergency_vehicle_preemption/simulation/config/**/*.sumocfg
+!emergency_vehicle_preemption/simulation/networks/**/*.net.xml
+!emergency_vehicle_preemption/simulation/routes/**/*.rou.xml
+!emergency_vehicle_preemption/simulation/routes/**/*.trips.xml
 
 # ---------------------------
 # SUMO Specific

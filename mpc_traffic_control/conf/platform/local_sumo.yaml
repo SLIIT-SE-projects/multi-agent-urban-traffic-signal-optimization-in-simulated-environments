@@ -1,0 +1,6 @@
+# Platform: Local Windows/Linux Machine
+sumo_binary: "sumo-gui"  # Use GUI to see what happens
+config_file: "conf/network/grid_3x3.sumocfg" # We will create this later
+step_length: 1.0
+warmup_seconds: 0
+use_gui: true

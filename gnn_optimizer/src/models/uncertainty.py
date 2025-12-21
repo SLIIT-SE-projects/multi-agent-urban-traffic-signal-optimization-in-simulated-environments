@@ -1,8 +1,9 @@
 import torch.nn as nn
+from src.config import ModelConfig
 
 class BayesianDropout(nn.Module):
     
-    def __init__(self, p=0.3):
+    def __init__(self, p=ModelConfig.DROPOUT_RATE):
         super().__init__()
         self.p = p
         self.dropout = nn.Dropout(p=p)

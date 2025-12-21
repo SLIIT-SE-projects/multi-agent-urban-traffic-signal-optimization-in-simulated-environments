@@ -7,15 +7,15 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if project_root not in sys.path:
     sys.path.append(project_root)
 
+from src.config import FileConfig, SimConfig, TrainConfig
 from src.graphBuilder.sumo_manager import SumoManager
 from src.graphBuilder.graph_builder import TrafficGraphBuilder
 
 # CONFIGURATION
-SUMO_CONFIG = "simulation/scenario.sumocfg"
-SUMO_NET = "simulation/network.net.xml"
-OUTPUT_FOLDER = "experiments/raw_data"
-STEPS_TO_COLLECT = 3600 * 2  # Collect data for 2 hours of simulation
-
+SUMO_CONFIG = SimConfig.SUMO_CFG
+SUMO_NET = SimConfig.NET_FILE
+OUTPUT_FOLDER = FileConfig.RAW_DATA_DIR
+STEPS_TO_COLLECT = TrainConfig.STEPS_TO_COLLECT
 def collect_dataset():
     # 1. Create Output Directory if it doesn't exist
     if not os.path.exists(OUTPUT_FOLDER):
@@ -53,7 +53,7 @@ def collect_dataset():
             collected_snapshots.append(graph_data)
             
         # 4. Save to Disk
-        save_path = os.path.join(OUTPUT_FOLDER, "traffic_data_1hr.pt")
+        save_path = FileConfig.DATASET_PATH
         print(f" Saving {len(collected_snapshots)} graph snapshots to {save_path}...")
         
         # Torch.save is very efficient for saving lists of tensors

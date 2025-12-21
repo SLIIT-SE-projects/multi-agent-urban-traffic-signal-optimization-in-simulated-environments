@@ -2,6 +2,7 @@ import torch
 from torch_geometric.data import HeteroData
 import sumolib
 import numpy as np
+from src.config import GraphConfig
 
 class TrafficGraphBuilder:
     def __init__(self, net_file_path):
@@ -84,23 +85,37 @@ class TrafficGraphBuilder:
             'feeds': torch.tensor([src_feed, dst_feed], dtype=torch.long)
         }
 
+    def _get_lane_features(self, lane_id, snapshot):
+        lane_data = snapshot['lanes'][lane_id]
+        
+        MAX_CAPACITY = 50.0 
+        MAX_SPEED = 13.89
+        
+        norm_queue = min(lane_data['queue_length'] / MAX_CAPACITY, 1.0)
+        
+        norm_wait = min(lane_data['total_wait_time'] / 120.0, 1.0)
+        
+        norm_avg_speed = min(lane_data['avg_speed'] / MAX_SPEED, 1.0)
+        
+        return [norm_queue, norm_wait, norm_avg_speed]
+
     def create_hetero_data(self, snapshot):
         
         data = HeteroData()
         
-        # --- 1. Node Features (Dynamic) ---
+        # 1. Node Features (Dynamic)
         
         # A. Intersection Features & Positions
-        x_inter = torch.zeros((self.num_intersections, 5), dtype=torch.float)
+        x_inter = torch.zeros((self.num_intersections, GraphConfig.INTERSECTION_INPUT_DIM), dtype=torch.float)
         pos_inter = [[0.0, 0.0] for _ in range(self.num_intersections)]
         
         for tls_id, info in snapshot['intersections'].items():
             if tls_id in self.tls_map:
                 idx = self.tls_map[tls_id]
                 # Features
-                p_idx = int(info['phase_index']) % 4
+                p_idx = int(info['phase_index']) % GraphConfig.NUM_SIGNAL_PHASES
                 x_inter[idx, p_idx] = 1.0 
-                x_inter[idx, 4] = float(info['time_to_switch'])
+                x_inter[idx, GraphConfig.NUM_SIGNAL_PHASES] = float(info['time_to_switch'])
                 # Position
                 sumo_node = self.net.getNode(tls_id)
                 if sumo_node:
@@ -111,7 +126,7 @@ class TrafficGraphBuilder:
         data['intersection'].pos = torch.tensor(pos_inter, dtype=torch.float)
 
         # B. Lane Features & Positions
-        x_lane = torch.zeros((self.num_lanes, 2), dtype=torch.float)
+        x_lane = torch.zeros((self.num_lanes, GraphConfig.LANE_INPUT_DIM), dtype=torch.float)
         pos_lane = [[0.0, 0.0] for _ in range(self.num_lanes)]
 
         for lane_id, info in snapshot['lanes'].items():
@@ -120,6 +135,7 @@ class TrafficGraphBuilder:
                 # Features
                 x_lane[idx, 0] = float(info['queue_length'])
                 x_lane[idx, 1] = float(info['avg_speed'])
+                x_lane[idx, 2] = float(info['waiting_time'])
                 
                 # Position (Calculate Center of Lane)
                 try:

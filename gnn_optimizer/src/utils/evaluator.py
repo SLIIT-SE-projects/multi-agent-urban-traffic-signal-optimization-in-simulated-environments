@@ -108,3 +108,42 @@ class Evaluator:
         plt.savefig(save_path)
         plt.close()
         print(f" Saved Error Histogram to {save_path}")
+
+    def plot_marl_performance(self, rewards, queues, losses, save_dir="experiments/plots"):
+        import os
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+            
+        episodes = range(1, len(rewards) + 1)
+        
+        # 1. Reward Curve
+        plt.figure(figsize=(10, 5))
+        plt.plot(episodes, rewards, marker='o', color='green', label='Total Reward')
+        plt.title('MARL Learning Curve: Cumulative Reward')
+        plt.xlabel('Episode')
+        plt.ylabel('Total Reward')
+        plt.grid(True)
+        plt.savefig(f"{save_dir}/marl_reward_curve.png")
+        plt.close()
+        
+        # 2. Queue Length Curve
+        plt.figure(figsize=(10, 5))
+        plt.plot(episodes, queues, marker='s', color='red', label='Avg Queue Length')
+        plt.title('Traffic Congestion: Average Queue Length')
+        plt.xlabel('Episode')
+        plt.ylabel('Vehicles per Lane')
+        plt.grid(True)
+        plt.savefig(f"{save_dir}/marl_queue_curve.png")
+        plt.close()
+
+        # 3. Loss Curve (Optional but good for debugging)
+        plt.figure(figsize=(10, 5))
+        plt.plot(episodes, losses, marker='x', color='blue', label='Actor Loss')
+        plt.title('Training Stability: Actor Loss')
+        plt.xlabel('Episode')
+        plt.ylabel('Loss')
+        plt.grid(True)
+        plt.savefig(f"{save_dir}/marl_loss_curve.png")
+        plt.close()
+        
+        print(f" Saved MARL performance plots to {save_dir}")

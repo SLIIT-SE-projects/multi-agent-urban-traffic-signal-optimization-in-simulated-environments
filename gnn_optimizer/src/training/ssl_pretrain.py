@@ -9,18 +9,19 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if project_root not in sys.path:
     sys.path.append(project_root)
 
+from src.config import FileConfig, TrainConfig, GraphConfig, ModelConfig
 from src.training.dataset_loader import TrafficDataset
 from src.models.hgat_core import RecurrentHGAT
 from src.utils.evaluator import Evaluator 
 
 # CONFIGURATION 
-DATASET_PATH = "experiments/raw_data/traffic_data_1hr.pt"
-MODEL_SAVE_PATH = "experiments/saved_models/pretrained_gnn.pth"
-PLOT_SAVE_DIR = "experiments/plots"
-EPOCHS = 10
-HIDDEN_DIM = 32
-LEARNING_RATE = 0.001
-TRAIN_SPLIT = 0.8 # 80% Training, 20% Testing
+DATASET_PATH = FileConfig.DATASET_PATH
+MODEL_SAVE_PATH = FileConfig.PRETRAINED_MODEL_PATH
+PLOT_SAVE_DIR = FileConfig.PLOTS_DIR
+EPOCHS = TrainConfig.SSL_EPOCHS
+HIDDEN_DIM = TrainConfig.HIDDEN_DIM
+LEARNING_RATE = TrainConfig.SSL_LEARNING_RATE
+TRAIN_SPLIT = TrainConfig.TRAIN_SPLIT # 80% Training, 20% Testing
 
 # AUXILIARY HEAD
 class StatePredictor(nn.Module):
@@ -33,8 +34,8 @@ class StatePredictor(nn.Module):
 
 def train_ssl():
     # 1. Setup Directories
-    if not os.path.exists("experiments/saved_models"):
-        os.makedirs("experiments/saved_models")
+    if not os.path.exists(FileConfig.MODELS_DIR):
+        os.makedirs(FileConfig.MODELS_DIR)
     if not os.path.exists(PLOT_SAVE_DIR):
         os.makedirs(PLOT_SAVE_DIR)
 
@@ -58,8 +59,8 @@ def train_ssl():
     sample_graph = dataset[0]
     metadata = sample_graph.metadata()
     
-    gnn_model = RecurrentHGAT(HIDDEN_DIM, 4, 2, metadata)
-    predictor = StatePredictor(HIDDEN_DIM, 5)
+    gnn_model = RecurrentHGAT(HIDDEN_DIM, GraphConfig.NUM_SIGNAL_PHASES, ModelConfig.NUM_HEADS, metadata)
+    predictor = StatePredictor(HIDDEN_DIM, GraphConfig.INTERSECTION_INPUT_DIM)
     evaluator = Evaluator()
     
     optimizer = optim.Adam(list(gnn_model.parameters()) + list(predictor.parameters()), lr=LEARNING_RATE)
@@ -83,7 +84,8 @@ def train_ssl():
             next_data = train_dataset[t+1]
             
             optimizer.zero_grad()
-            _, hidden_state = gnn_model(current_data.x_dict, current_data.edge_index_dict, hidden_state)
+            
+            _, _, hidden_state = gnn_model(current_data.x_dict, current_data.edge_index_dict, hidden_state)
             
             predicted_next_state = predictor(hidden_state)
             target = next_data['intersection'].x
@@ -112,7 +114,8 @@ def train_ssl():
                 current_data = test_dataset[t]
                 next_data = test_dataset[t+1]
                 
-                _, hidden_state_test = gnn_model(current_data.x_dict, current_data.edge_index_dict, hidden_state_test)
+                _, _, hidden_state_test = gnn_model(current_data.x_dict, current_data.edge_index_dict, hidden_state_test)
+                
                 predicted = predictor(hidden_state_test)
                 target = next_data['intersection'].x
                 
@@ -157,7 +160,7 @@ def train_ssl():
     evaluator.plot_time_series_sample(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/timeseries.png")
     evaluator.plot_error_distribution(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/error_hist.png")
     
-    print(" Pre-training Complete! Plots saved to {PLOT_SAVE_DIR}")
+    print(f" Pre-training Complete! Plots saved to {PLOT_SAVE_DIR}")
 
 if __name__ == "__main__":
     train_ssl()
