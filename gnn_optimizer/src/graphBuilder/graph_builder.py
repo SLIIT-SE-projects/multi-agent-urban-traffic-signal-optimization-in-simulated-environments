@@ -85,11 +85,25 @@ class TrafficGraphBuilder:
             'feeds': torch.tensor([src_feed, dst_feed], dtype=torch.long)
         }
 
+    def _get_lane_features(self, lane_id, snapshot):
+        lane_data = snapshot['lanes'][lane_id]
+        
+        MAX_CAPACITY = 50.0 
+        MAX_SPEED = 13.89
+        
+        norm_queue = min(lane_data['queue_length'] / MAX_CAPACITY, 1.0)
+        
+        norm_wait = min(lane_data['total_wait_time'] / 120.0, 1.0)
+        
+        norm_avg_speed = min(lane_data['avg_speed'] / MAX_SPEED, 1.0)
+        
+        return [norm_queue, norm_wait, norm_avg_speed]
+
     def create_hetero_data(self, snapshot):
         
         data = HeteroData()
         
-        # --- 1. Node Features (Dynamic) ---
+        # 1. Node Features (Dynamic)
         
         # A. Intersection Features & Positions
         x_inter = torch.zeros((self.num_intersections, GraphConfig.INTERSECTION_INPUT_DIM), dtype=torch.float)
@@ -121,6 +135,7 @@ class TrafficGraphBuilder:
                 # Features
                 x_lane[idx, 0] = float(info['queue_length'])
                 x_lane[idx, 1] = float(info['avg_speed'])
+                x_lane[idx, 2] = float(info['waiting_time'])
                 
                 # Position (Calculate Center of Lane)
                 try:

@@ -18,7 +18,7 @@ class SimConfig:
 class GraphConfig:
     NUM_SIGNAL_PHASES = 3  # Fixed to 3 based on your map
     INTERSECTION_INPUT_DIM = NUM_SIGNAL_PHASES + 1  # Phases + Time feature
-    LANE_INPUT_DIM = 2     # Queue + Speed (Add more if using CO2 etc)
+    LANE_INPUT_DIM = 3     # Queue + wait + Speed
 
 class ModelConfig:
     NUM_HEADS = 2      # For GATConv
@@ -36,21 +36,28 @@ class TrainConfig:
     TRAIN_SPLIT = 0.8
 
     # MARL TRAINING SETTINGS
-    MARL_EPISODES = 5
-    MARL_STEPS_PER_EPISODE = 1000
-    MARL_LEARNING_RATE = 0.0005
-    ACTION_INTERVAL = 5    # Action every 5 seconds
+    MARL_EPISODES = 100
+    MARL_STEPS_PER_EPISODE = 500
+    MARL_LEARNING_RATE = 5e-5 
+    ACTION_INTERVAL = 15    
     MARL_GAMMA = 0.99
-    MARL_TESTING_EPISODES = 5
+    MARL_TESTING_EPISODES = 10  
 
-    # Epsilon Greedy (Exploration)
+    # PPO HYPERPARAMETERS 
+    PPO_EPOCHS = 4        # How many times to train on the same batch
+    GAE_LAMBDA = 0.95     # Generalized Advantage Estimation smoothing
+    PPO_EPSILON = 0.2     # Clipping range 
+    ENTROPY_COEF = 0.05   # Bonus for exploration
+    VALUE_LOSS_COEF = 0.5 # Weight of the Critic's loss
+
+    # Epsilon Greedy
     EPSILON_START = 1.0
     EPSILON_END = 0.05
     EPSILON_DECAY = 0.90
 
     # Reward Weights
-    W_QUEUE = 1.0
-    W_WAIT = 0.01
+    W_QUEUE = 0.8
+    W_WAIT = 0.5
 
     # INFERENCE & SAFETY
     UNCERTAINTY_THRESHOLD = 0.05
@@ -64,5 +71,6 @@ class FileConfig:
     MODELS_DIR = os.path.join(EXPERIMENTS_FOLDER, "saved_models")
     PRETRAINED_MODEL_PATH = os.path.join(MODELS_DIR, "pretrained_gnn.pth")
     FINAL_MARL_MODEL_PATH = os.path.join(MODELS_DIR, "final_marl_model.pth")
+    FINAL_MARL_OLD_MODEL_PATH = os.path.join(MODELS_DIR, "reinforce_model.pth")
 
     PLOTS_DIR = os.path.join(EXPERIMENTS_FOLDER, "plots")

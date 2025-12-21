@@ -1,0 +1,6 @@
+# Conservative Strategy: Prioritizes stability over aggressive clearing
+prediction_horizon: 20
+control_horizon: 5
+min_green_time: 15
+max_green_time: 60
+yellow_time: 4

@@ -1,0 +1,16 @@
+defaults:
+  - _self_
+  - mpc: conservative     # Defaults to 'conservative' tuning
+  - platform: local_sumo  # Defaults to running locally
+  - network: grid_3x3
+
+optimization:
+  solver_name: "ipopt"
+  time_limit: 0.1
+  weight_queue: 1.0
+  weight_switch: 50.0
+
+logging:
+  level: "INFO"
+  log_dir: "data/logs"
+  save_frequency: 50

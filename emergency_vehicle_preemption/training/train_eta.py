@@ -1,9 +1,10 @@
 import os
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
-from tensorflow.keras.callbacks import EarlyStopping
+
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout, Bidirectional
+from keras.callbacks import EarlyStopping
 
 # --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -11,8 +12,8 @@ PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "../data/processed/")
 MODEL_SAVE_DIR = os.path.join(BASE_DIR, "../models/saved/")
 
 # Hyperparameters
-EPOCHS = 50          # How many times to loop through the data
-BATCH_SIZE = 4       # Number of samples per update (Small because our current data is small)
+EPOCHS = 100          # How many times to loop through the data
+BATCH_SIZE = 32       # Number of samples per update (Small because our current data is small)
 VALIDATION_SPLIT = 0.2
 
 os.makedirs(MODEL_SAVE_DIR, exist_ok=True)

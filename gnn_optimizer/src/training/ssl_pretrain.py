@@ -84,7 +84,8 @@ def train_ssl():
             next_data = train_dataset[t+1]
             
             optimizer.zero_grad()
-            _, hidden_state = gnn_model(current_data.x_dict, current_data.edge_index_dict, hidden_state)
+            
+            _, _, hidden_state = gnn_model(current_data.x_dict, current_data.edge_index_dict, hidden_state)
             
             predicted_next_state = predictor(hidden_state)
             target = next_data['intersection'].x
@@ -113,7 +114,8 @@ def train_ssl():
                 current_data = test_dataset[t]
                 next_data = test_dataset[t+1]
                 
-                _, hidden_state_test = gnn_model(current_data.x_dict, current_data.edge_index_dict, hidden_state_test)
+                _, _, hidden_state_test = gnn_model(current_data.x_dict, current_data.edge_index_dict, hidden_state_test)
+                
                 predicted = predictor(hidden_state_test)
                 target = next_data['intersection'].x
                 
@@ -158,7 +160,7 @@ def train_ssl():
     evaluator.plot_time_series_sample(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/timeseries.png")
     evaluator.plot_error_distribution(cat_preds, cat_targets, save_path=f"{PLOT_SAVE_DIR}/error_hist.png")
     
-    print(" Pre-training Complete! Plots saved to {PLOT_SAVE_DIR}")
+    print(f" Pre-training Complete! Plots saved to {PLOT_SAVE_DIR}")
 
 if __name__ == "__main__":
     train_ssl()
