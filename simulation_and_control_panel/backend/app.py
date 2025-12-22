@@ -227,6 +227,17 @@ def clear_all_states():
     result = state_controller.clear_all_states()
     return jsonify(result)
 
+@app.route('/api/optimizer/load', methods=['POST'])
+def load_optimizer():
+    type = request.json.get('type', 'gnn')
+    sim_controller.load_optimizer(type)
+    return jsonify({"status": "success", "message": f"{type} optimizer loaded"})
+
+@app.route('/api/optimizer/toggle', methods=['POST'])
+def toggle_optimizer():
+    # Enable/Disable logic in controller
+    pass
+
 
 
 if __name__ == '__main__':

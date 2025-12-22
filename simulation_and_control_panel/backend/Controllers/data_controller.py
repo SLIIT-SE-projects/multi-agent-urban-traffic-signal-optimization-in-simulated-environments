@@ -162,3 +162,45 @@ class DataController:
             }
         except Exception as e:
             return {"status": "error", "message": f"Vehicle '{vehicle_id}' not found or error: {str(e)}"}
+        
+    def get_gnn_features(self):
+        """
+        Extracts dynamic features from SUMO for the GNN.
+        Matches the keys expected by TrafficGraphBuilder.create_hetero_data()
+        """
+        
+        # --- 1. Lane Data ---
+        lane_ids = traci.lane.getIDList()
+        lanes = {}
+        
+        for lane_id in lane_ids:
+            # traci.lane.getWaitingTime returns the sum of waiting time of all vehicles on the lane
+            waiting_time = traci.lane.getWaitingTime(lane_id)
+            
+            # traci.lane.getLastStepMeanSpeed returns m/s
+            avg_speed = traci.lane.getLastStepMeanSpeed(lane_id)
+            
+            # traci.lane.getLastStepHaltingNumber returns count of stopped vehicles
+            queue_length = traci.lane.getLastStepHaltingNumber(lane_id)
+
+            lanes[lane_id] = {
+                "queue_length": queue_length,  # Used in x_lane[0]
+                "avg_speed": avg_speed,        # Used in x_lane[1]
+                "waiting_time": waiting_time   # Used in x_lane[2]
+            }
+        
+        # --- 2. Intersection (Traffic Light) Data ---
+        intersections = {}
+        current_sim_time = traci.simulation.getTime()
+
+        for tls_id in traci.trafficlight.getIDList():
+             # Calculate time remaining until the next phase switch
+             next_switch_time = traci.trafficlight.getNextSwitch(tls_id)
+             time_to_switch = next_switch_time - current_sim_time
+
+             intersections[tls_id] = {
+                 "phase_index": traci.trafficlight.getPhase(tls_id), # Used for One-Hot Encoding
+                 "time_to_switch": time_to_switch                    # Used as explicit feature
+             }
+             
+        return {"lanes": lanes, "intersections": intersections}
